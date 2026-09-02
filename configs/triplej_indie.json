@@ -1,0 +1,7 @@
+{
+  "_comment": "Configuration for the Triple J Agent",
+  "triplej": {
+    "searchName": "Triple J Indie Discovery"
+  },
+  "targetGenres": ["Indie Rock", "Alt Rock", "Surf Rock", "Indie"]
+}

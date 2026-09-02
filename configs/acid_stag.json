@@ -1,0 +1,7 @@
+{
+  "_comment": "Add genre-specific agent configurations here in the future (e.g., youtubeAgent, bandcampAgent)",
+  "acidStag": {
+    "searchName": "Acid Stag Discovery",
+    "targetGenres": ["Indie Rock", "Alt Rock", "Surf Rock", "Indie"]
+  }
+}
