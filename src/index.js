@@ -7,7 +7,7 @@ const { runBandcampAgent } = require('./agents/bandcampAgent');
 const { runFuturemagAgent } = require('./agents/futuremagAgent');
 const { runHappyMagAgent } = require('./agents/happymagAgent');
 const { runListenBrainzAgent } = require('./agents/listenBrainzAgent');
-const { runRollingStoneAUAgent } = require('./agents/rollingStoneAUAgent');
+const { runRootsMagAgent } = require('./agents/rootsMagAgent');
 
 const { runTripleJAgent } = require('./agents/tripleJAgent');
 const { generateHTML } = require('./utils/htmlGenerator');
@@ -76,9 +76,9 @@ async function main() {
         results = results.concat(listenbrainzResults);
     }
     
-    if (config.rollingstone) {
-        const rollingstoneResults = await runRollingStoneAUAgent(config.rollingstone, exclusions);
-        results = results.concat(rollingstoneResults);
+    if (config.rootsmag) {
+        const rootsmagResults = await runRootsMagAgent(config.rootsmag, exclusions);
+        results = results.concat(rootsmagResults);
     }
     
     if (config.triplej) {
@@ -97,7 +97,7 @@ async function main() {
                        config.futuremag?.searchName ||
                        config.happymag?.searchName ||
                        config.listenbrainz?.searchName ||
-                       config.rollingstone?.searchName ||
+                       config.rootsmag?.searchName ||
 
                        config.triplej?.searchName ||
                        'search_results';

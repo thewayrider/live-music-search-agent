@@ -76,6 +76,44 @@ async function sendEmailNotification(newSongs, baseHtmlPath, searchName) {
     }
 }
 
+async function sendReminderEmail(subject, htmlContent) {
+    const secretsPath = path.resolve(__dirname, '../../configs/secrets.json');
+    if (!fs.existsSync(secretsPath)) {
+        console.error(`ERROR: Secrets file not found at ${secretsPath}. Cannot send email.`);
+        return;
+    }
+
+    const secrets = JSON.parse(fs.readFileSync(secretsPath, 'utf8'));
+    if (!secrets.gmailUser || !secrets.gmailAppPassword) {
+        console.error("ERROR: Invalid secrets.json. Missing gmailUser or gmailAppPassword.");
+        return;
+    }
+
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: secrets.gmailUser,
+            pass: secrets.gmailAppPassword
+        }
+    });
+
+    const mailOptions = {
+        from: secrets.gmailUser,
+        to: secrets.gmailUser,
+        subject: subject,
+        html: htmlContent
+    };
+
+    try {
+        console.log(`Sending reminder email: ${subject}...`);
+        const info = await transporter.sendMail(mailOptions);
+        console.log("Reminder email sent successfully: " + info.response);
+    } catch (error) {
+        console.error("Error sending reminder email:", error);
+    }
+}
+
 module.exports = {
-    sendEmailNotification
+    sendEmailNotification,
+    sendReminderEmail
 };

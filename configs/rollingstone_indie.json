@@ -1,7 +1,0 @@
-{
-  "_comment": "Configuration for the Rolling Stone AU Agent",
-  "rollingstone": {
-    "searchName": "Rolling Stone AU Indie Discovery"
-  },
-  "targetGenres": ["Indie Rock", "Alt Rock", "Surf Rock", "Indie"]
-}
