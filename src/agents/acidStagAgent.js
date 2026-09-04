@@ -1,5 +1,5 @@
 const cheerio = require("cheerio");
-
+const { extractReleasesWithAI } = require("../utils/aiScraper");
 const DEFAULTS = {
   baseUrl: "https://acidstag.com",
   feedUrl: "https://acidstag.com/feed/",
@@ -64,8 +64,8 @@ async function runAcidStagAgent(config = {}, exclusions = {}) {
 
   for (const item of feedItems) {
     if (!item.isRoundup) {
-      const candidate = extractFromRSSItem(item, exclusions, options);
-      if (candidate) releases.push(candidate);
+      const candidates = await extractFromRSSItem(item, exclusions, options);
+      if (candidates && candidates.length > 0) releases.push(...candidates);
       continue;
     }
 
@@ -79,7 +79,7 @@ async function runAcidStagAgent(config = {}, exclusions = {}) {
     });
     if (!html) continue;
 
-    const roundupItems = extractFromRoundup(html, item, exclusions, options);
+    const roundupItems = await extractFromRoundup(html, item, exclusions, options);
     console.log(`[AcidStag Agent] Roundup "${item.title}" → ${roundupItems.length} items`);
     releases.push(...roundupItems);
   }
@@ -137,122 +137,103 @@ function parseRSSFeed(xml, options) {
 // Single-release extraction directly from RSS item (no HTML fetch)
 // ---------------------------------------------------------------------------
 
-function extractFromRSSItem(item, filters, options) {
-  const { artist, releaseTitle } = parseArtistTitle(item.title);
-  if (!artist) return null;
+async function extractFromRSSItem(item, filters, options) {
+  const combinedText = cleanText(`${item.title} ${item.description}`);
+  console.log(`[AcidStag Agent] AI extracting from RSS item: ${item.title}`);
+  const aiResults = await extractReleasesWithAI(combinedText);
+  if (!aiResults || aiResults.length === 0) return [];
+  
+  const results = [];
+  for (const r of aiResults) {
+      const artist = r.artist;
+      const title = r.title;
+      if (!artist || !title) continue;
+      
+      const releaseType = (r.releaseType || "unknown").toLowerCase();
+      const genresMapped = inferGenresMapped(combinedText, filters, options);
+      const artistCountryMapped = inferCountry(combinedText, artist, filters);
+      const marketsAvailable = inferMarkets(artistCountryMapped, filters);
+      const score = scoreRelease({
+        isRoundup: false,
+        combinedText,
+        releaseType,
+        genresMapped,
+        artistCountryMapped,
+      });
+      const bucket = bucketFromScore(score);
 
-  const combinedText = cleanText(`${item.title} ${item.description}`).toLowerCase();
-  const releaseType = inferReleaseType(combinedText, item.title);
-  const genresMapped = inferGenresMapped(combinedText, filters, options);
-  const artistCountryMapped = inferCountry(combinedText, artist, filters);
-  const marketsAvailable = inferMarkets(artistCountryMapped, filters);
-  const score = scoreRelease({
-    isRoundup: false,
-    combinedText,
-    releaseType,
-    genresMapped,
-    artistCountryMapped,
-  });
-  const bucket = bucketFromScore(score);
-
-  return {
-    artist,
-    title: releaseTitle || "Unknown release",
-    releaseType,
-    releaseDate: item.articleDate || "unknown",
-    articleDate: item.articleDate || "unknown",
-    sourceService: options.sourceService,
-    sourceUrl: item.url,
-    marketsAvailable,
-    genresMapped,
-    artistCountryMapped,
-    score,
-    bucket,
-  };
+      results.push({
+        artist,
+        title,
+        releaseType,
+        releaseDate: item.articleDate || "unknown",
+        articleDate: item.articleDate || "unknown",
+        sourceService: options.sourceService,
+        sourceUrl: item.url,
+        marketsAvailable,
+        genresMapped,
+        artistCountryMapped,
+        score,
+        bucket,
+      });
+  }
+  return results;
 }
 
 // ---------------------------------------------------------------------------
 // Roundup article extraction (HTML fetch + section parsing)
 // ---------------------------------------------------------------------------
 
-function extractFromRoundup(html, item, filters, options) {
+async function extractFromRoundup(html, item, filters, options) {
+  // Strip HTML and isolate the article body to avoid token bloat
   const $ = cheerio.load(html);
-  if (!$) return [];
+  $('br, p, div, h1, h2, h3, h4, h5, h6, li, strong, b').append(' ');
+  const bodyText = cleanText($('.entry-content, main, article, body').text());
+  console.log(`[AcidStag Agent] AI extracting from roundup: ${item.title}`);
+  
+  const aiResults = await extractReleasesWithAI(bodyText);
+  if (!aiResults || aiResults.length === 0) return [];
+  
+  const results = [];
+  for (const r of aiResults) {
+      const artist = r.artist;
+      const title = r.title;
+      if (!artist || !title) continue;
+      
+      const releaseType = (r.releaseType || "unknown").toLowerCase();
+      const genresMapped = inferGenresMapped(bodyText, filters, options);
+      const artistCountryMapped = inferCountry(bodyText, artist, filters);
+      const marketsAvailable = inferMarkets(artistCountryMapped, filters);
+      const score = scoreRelease({
+        isRoundup: true,
+        combinedText: bodyText,
+        releaseType,
+        genresMapped,
+        artistCountryMapped,
+      });
+      const bucket = bucketFromScore(score);
 
-  const items = [];
-  const articleDate = item.articleDate || "unknown";
-  const candidates = new Set();
-
-  $("h2, h3, h4, p strong, p b").each((_, el) => {
-    const text = cleanText($(el).text());
-    if (!text || text.length > 100) return;
-    if (/friday faves|newcomers|acid stag|sound escapes/i.test(text)) return;
-    candidates.add(text);
-  });
-
-  for (const heading of candidates) {
-    const { artist, releaseTitle } = parseArtistTitle(heading);
-    if (!artist) continue;
-
-    const combinedText = cleanText(`${item.title} ${item.description} ${heading}`).toLowerCase();
-    const releaseType = inferReleaseType(combinedText, heading);
-    const genresMapped = inferGenresMapped(combinedText, filters, options);
-    const artistCountryMapped = inferCountry(combinedText, artist, filters);
-    const marketsAvailable = inferMarkets(artistCountryMapped, filters);
-    const score = scoreRelease({
-      isRoundup: true,
-      combinedText,
-      releaseType,
-      genresMapped,
-      artistCountryMapped,
-    });
-    const bucket = bucketFromScore(score);
-
-    items.push({
-      artist,
-      title: releaseTitle || "Unknown release",
-      releaseType,
-      releaseDate: articleDate,
-      articleDate,
-      sourceService: options.sourceService,
-      sourceUrl: item.url,
-      marketsAvailable,
-      genresMapped,
-      artistCountryMapped,
-      score,
-      bucket,
-    });
+      results.push({
+        artist,
+        title,
+        releaseType,
+        releaseDate: item.articleDate || "unknown",
+        articleDate: item.articleDate || "unknown",
+        sourceService: options.sourceService,
+        sourceUrl: item.url,
+        marketsAvailable,
+        genresMapped,
+        artistCountryMapped,
+        score,
+        bucket,
+      });
   }
-
-  return items;
-}
-
-// ---------------------------------------------------------------------------
-// Parse "Artist – Title" or "ARTIST – Title (LP)" from RSS/heading text
-// ---------------------------------------------------------------------------
-
-function parseArtistTitle(text) {
-  const match = text.match(/^(.+?)\s*[–—]\s*['"]?(.+?)['"]?\s*(\(LP\)|\(EP\))?\s*$/);
-  if (!match) return { artist: null, releaseTitle: null };
-
-  const artist = cleanText(match[1]);
-  const releaseTitle = cleanText(match[2]).replace(/^['""']|['""']$/g, "");
-
-  if (!artist || artist.length < 1) return { artist: null, releaseTitle: null };
-  return { artist, releaseTitle };
+  return results;
 }
 
 // ---------------------------------------------------------------------------
 // Inference helpers
 // ---------------------------------------------------------------------------
-
-function inferReleaseType(text, rawTitle = "") {
-  const t = `${text} ${rawTitle}`.toLowerCase();
-  if (/\b(lp)\b/.test(rawTitle) || /\b(album|record|lp|full-length)\b/.test(t)) return "album";
-  if (/\b(ep)\b/.test(rawTitle) || /\b(ep|debut ep|upcoming ep)\b/.test(t)) return "ep";
-  if (/\b(single|new single|latest single|debut single|track)\b/.test(t)) return "single";
-  return "unknown";
-}
 
 function inferGenresMapped(text, filters, options) {
   const found = new Set();

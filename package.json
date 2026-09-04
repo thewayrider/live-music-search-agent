@@ -11,6 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@huggingface/inference": "^4.13.28",
     "cheerio": "^1.2.0",
     "nodemailer": "^9.0.5",
     "puppeteer": "^25.8.0"
