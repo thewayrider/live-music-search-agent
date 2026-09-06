@@ -1,22 +1,27 @@
 const fs = require('fs');
 const path = require('path');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-function getHfToken() {
+function getGeminiToken() {
     try {
         const secretsPath = path.join(__dirname, '../../configs/secrets.json');
         const secrets = JSON.parse(fs.readFileSync(secretsPath, 'utf8'));
-        return secrets.hfToken;
+        return secrets.geminiToken;
     } catch (e) {
-        console.error("Could not read hfToken from configs/secrets.json");
+        console.error("Could not read geminiToken from configs/secrets.json");
         return null;
     }
 }
 
 async function extractReleasesWithAI(articleText) {
-    const token = getHfToken();
+    const token = getGeminiToken();
     if (!token) return [];
 
-    const prompt = `[INST] You are a music data extraction bot.
+    // Gemini Free Tier in 2026 has a limit of 5 requests per minute.
+    // We add a 12.5 second delay before every request to perfectly respect this limit.
+    await new Promise(r => setTimeout(r, 12500));
+
+    const prompt = `You are a music data extraction bot.
 Extract all the new music releases mentioned in the following article text.
 Return ONLY a valid JSON array of objects. Do not include any other text, markdown formatting, or explanations.
 Each object must have these exact keys:
@@ -25,32 +30,50 @@ Each object must have these exact keys:
 - "releaseType": Either "single", "ep", or "album" (string)
 
 Article Text:
-${articleText.substring(0, 4000)} [/INST]`;
+${articleText.substring(0, 15000)}`;
 
-    const { HfInference } = require('@huggingface/inference');
-    const hf = new HfInference(token);
+    const genAI = new GoogleGenerativeAI(token);
+    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
 
-    try {
-        const response = await hf.chatCompletion({
-            model: 'Qwen/Qwen2.5-72B-Instruct',
-            messages: [{ role: "user", content: prompt }],
-            max_tokens: 1024,
-            temperature: 0.1
-        });
+    let attempts = 0;
+    while (attempts < 3) {
+        try {
+            const result = await model.generateContent({
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.1,
+                    responseMimeType: "application/json",
+                }
+            });
 
-        let generatedText = response.choices[0].message.content.trim();
-        const jsonMatch = generatedText.match(/\[\s*\{[\s\S]*\}\s*\]/);
-        if (jsonMatch) {
-            const parsedData = JSON.parse(jsonMatch[0]);
-            return Array.isArray(parsedData) ? parsedData : [];
-        } else {
-            console.warn("AI did not return a valid JSON array. RAW AI OUTPUT:", generatedText.substring(0, 500));
-            return [];
+            let generatedText = result.response.text().trim();
+            const jsonMatch = generatedText.match(/\[\s*\{[\s\S]*\}\s*\]/);
+            
+            if (jsonMatch) {
+                const parsedData = JSON.parse(jsonMatch[0]);
+                return Array.isArray(parsedData) ? parsedData : [];
+            } else {
+                try {
+                    const parsedData = JSON.parse(generatedText);
+                    return Array.isArray(parsedData) ? parsedData : [parsedData];
+                } catch (e) {
+                    console.warn("AI did not return a valid JSON array. RAW AI OUTPUT:", generatedText.substring(0, 500));
+                    return [];
+                }
+            }
+        } catch (e) {
+            attempts++;
+            if (e.message.includes("503") || e.message.includes("429")) {
+                console.log(`[Gemini API] Error: ${e.message}. Retrying in 35s...`);
+                await new Promise(r => setTimeout(r, 35000));
+            } else {
+                console.error("Failed to extract releases with Gemini (SDK Error):", e.message);
+                return [];
+            }
         }
-    } catch (e) {
-        console.error("Failed to extract releases with AI (SDK Error):", e.message);
-        return [];
     }
+    console.error("Failed to extract releases with Gemini after 3 attempts.");
+    return [];
 }
 
 module.exports = { extractReleasesWithAI };

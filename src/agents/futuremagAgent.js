@@ -1,7 +1,10 @@
+const cheerio = require("cheerio");
+const { extractReleasesWithAI } = require("../utils/aiScraper");
+
 const DEFAULTS = {
   baseUrl: "https://futuremagmusic.com",
   categoryId: 1410, // "Future Focus"
-  perPage: 20,
+  perPage: 5,
   sourceService: "Futuremag Music",
   defaultCountry: "Australia", 
   userAgent: "music-release-agent/1.0 ( https://kimrampling.com )",
@@ -24,13 +27,20 @@ const DEFAULTS = {
   },
 };
 
+function cleanText(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .trim();
+}
+
 async function runFuturemagAgent(config = {}, exclusions = {}) {
   const options = { ...DEFAULTS, ...config };
   const http = fetch;
 
   const url =
-    `${options.baseUrl}/wp-json/wp/v2/posts` +
-    `?categories=${options.categoryId}&per_page=${options.perPage}&_fields=id,date,link,title,content`;
+    `${options.baseUrl}/wp-json/wp/v2/article` +
+    `?search=New+Aussie+Releases&per_page=${options.perPage}&_fields=id,date,link,title,content`;
 
   const res = await http(url, {
     headers: { "User-Agent": options.userAgent, Accept: "application/json" },
@@ -48,8 +58,18 @@ async function runFuturemagAgent(config = {}, exclusions = {}) {
     const articleDate = (post.date || "").slice(0, 10) || "unknown";
     const articleUrl = post.link || options.baseUrl;
     const html = (post.content && post.content.rendered) || "";
-    for (const rel of parseFutureFocusPost(html)) {
-      items.push(buildItem(rel, { articleDate, articleUrl, filters: exclusions, options }));
+    
+    const $ = cheerio.load(html);
+    $('br, p, div, h1, h2, h3, h4, h5, h6, li, strong, b').append(' ');
+    const bodyText = cleanText($.text());
+
+    console.log(`[Futuremag Agent] AI extracting from: ${post.title && post.title.rendered}`);
+    const aiResults = await extractReleasesWithAI(bodyText);
+
+    for (const rel of aiResults) {
+      // The AI doesn't give us embeds, so embedUrl will be null unless we fetch it manually
+      // We pass bodyText so buildItem can infer genres
+      items.push(buildItem(rel, { articleDate, articleUrl, filters: exclusions, options, bodyText }));
     }
   }
 
@@ -76,77 +96,16 @@ async function runFuturemagAgent(config = {}, exclusions = {}) {
 // Post parsing
 // ---------------------------------------------------------------------------
 
-function parseFutureFocusPost(html) {
-  if (!html) return [];
-  const headingRe = /<p[^>]*>\s*<strong>([\s\S]*?)<\/strong>\s*<\/p>/gi;
-
-  const heads = [];
-  let m;
-  while ((m = headingRe.exec(html)) !== null) {
-    const raw = decodeEntities(stripTags(m[1])).trim();
-    if (!raw) continue; 
-    heads.push({ raw, start: m.index, end: m.index + m[0].length });
-  }
-
-  const out = [];
-  for (let i = 0; i < heads.length; i++) {
-    const parsed = parseHeading(heads[i].raw);
-    if (!parsed) continue;
-    const segment = html.slice(heads[i].end, i + 1 < heads.length ? heads[i + 1].start : html.length);
-    parsed.blurb = decodeEntities(stripTags(segment)).replace(/\s+/g, " ").trim();
-    parsed.embedUrl = firstYouTube(segment);
-    out.push(parsed);
-  }
-  return out;
-}
-
-function parseHeading(rawHeading) {
-  const heading = rawHeading.replace(/\s+/g, " ").trim();
-  if (!heading) return null;
-
-  const dash = heading.match(/\s+[–—-]\s+/);
-  let artistPart, titlePart;
-  if (dash) {
-    const idx = dash.index;
-    artistPart = heading.slice(0, idx).trim();
-    titlePart = heading.slice(idx + dash[0].length).trim();
-  } else {
-    artistPart = heading;
-    titlePart = "";
-  }
-
-  let releaseType = "single";
-  const typeMatch = titlePart.match(/\((EP|ALBUM|LP|SINGLE|MIXTAPE)\)/i);
-  if (typeMatch) {
-    const t = typeMatch[1].toUpperCase();
-    releaseType = t === "EP" ? "ep" : t === "SINGLE" ? "single" : "album"; 
-    titlePart = titlePart.replace(/\s*\((EP|ALBUM|LP|SINGLE|MIXTAPE)\)\s*/i, " ").trim();
-  }
-
-  let featured = false;
-  let featuredWith = null;
-  let artist = artistPart;
-  const feat = artistPart.match(/\s+(?:ft\.?|feat\.?|featuring)\s+/i);
-  if (feat) {
-    featured = true;
-    artist = artistPart.slice(0, feat.index).trim();
-    featuredWith = titleCase(artistPart.slice(feat.index + feat[0].length).trim());
-  }
-
-  return {
-    artist: titleCase(artist),
-    featured,
-    featuredWith,
-    title: titleCase(titlePart) || "unknown",
-    releaseType,
-  };
-}
+// ---------------------------------------------------------------------------
+// Post parsing
+// ---------------------------------------------------------------------------
+// Manual parsing removed in favor of AI Scraper
 
 // ---------------------------------------------------------------------------
 // Item construction
 // ---------------------------------------------------------------------------
-function buildItem(rel, { articleDate, articleUrl, filters, options }) {
-  const combinedText = `${rel.artist} ${rel.title} ${rel.blurb || ""}`.toLowerCase();
+function buildItem(rel, { articleDate, articleUrl, filters, options, bodyText }) {
+  const combinedText = `${rel.artist} ${rel.title} ${bodyText || ""}`.toLowerCase();
 
   const genresMapped = inferGenresMapped(combinedText, filters, options);
   const inferred = inferCountry(combinedText, rel.artist, filters);
@@ -264,46 +223,9 @@ function bucketFromScore(score) {
 // ---------------------------------------------------------------------------
 // HTML / text utilities
 // ---------------------------------------------------------------------------
-function stripTags(s) {
-  return String(s).replace(/<[^>]*>/g, " ");
-}
-
-function firstYouTube(html) {
-  const m = String(html).match(/https?:\/\/www\.youtube\.com\/embed\/([\w-]+)/i);
-  return m ? `https://www.youtube.com/watch?v=${m[1]}` : null;
-}
-
-const NAMED_ENTITIES = {
-  amp: "&", quot: '"', apos: "'", nbsp: " ", hellip: "…",
-  lsquo: "‘", rsquo: "’", ldquo: "“", rdquo: "”",
-  ndash: "–", mdash: "—",
-};
-
-function decodeEntities(s) {
-  return String(s)
-    .replace(/&#x([0-9a-f]+);/gi, (_, h) => safeChar(parseInt(h, 16)))
-    .replace(/&#(\d+);/g, (_, d) => safeChar(parseInt(d, 10)))
-    .replace(/&([a-z]+);/gi, (mm, name) => (name.toLowerCase() in NAMED_ENTITIES ? NAMED_ENTITIES[name.toLowerCase()] : mm));
-}
-
-function safeChar(code) {
-  try { return String.fromCodePoint(code); } catch { return ""; }
-}
-
-const SMALL_WORDS = new Set(["a", "an", "and", "the", "of", "to", "in", "on", "for", "with", "vs", "x"]);
-function titleCase(s) {
-  const str = String(s).trim();
-  if (!str) return "";
-  return str
-    .split(/\s+/)
-    .map((w, i) => {
-      const lower = w.toLowerCase();
-      const bare = lower.replace(/[^a-z0-9]/g, "");
-      if (i !== 0 && SMALL_WORDS.has(bare)) return lower;
-      return lower.replace(/[a-z]/, (c) => c.toUpperCase());
-    })
-    .join(" ");
-}
+// ---------------------------------------------------------------------------
+// HTML / text utilities
+// ---------------------------------------------------------------------------
 
 function slugify(s) {
   return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "");
