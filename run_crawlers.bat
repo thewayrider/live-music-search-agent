@@ -15,7 +15,4 @@ node src/index.js configs/listenbrainz_indie.json
 echo Sending Rolling Stone AU Weekly Reminder...
 node src/sendRollingStoneReminder.js
 
-echo Running Triple J Crawler...
-node src/index.js configs/triplej_indie.json
-
 echo All crawlers finished!

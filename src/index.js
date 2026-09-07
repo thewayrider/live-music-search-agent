@@ -5,11 +5,10 @@ const { runAcidStagAgent } = require('./agents/acidStagAgent');
 const { runAmrapAgent } = require('./agents/amrapAgent');
 const { runBandcampAgent } = require('./agents/bandcampAgent');
 const { runFuturemagAgent } = require('./agents/futuremagAgent');
-const { runHappyMagAgent } = require('./agents/happymagAgent');
 const { runListenBrainzAgent } = require('./agents/listenBrainzAgent');
 const { runRootsMagAgent } = require('./agents/rootsMagAgent');
-
-const { runTripleJAgent } = require('./agents/tripleJAgent');
+const { runSpotifyEmbedAgent } = require('./agents/spotifyEmbedAgent');
+const { runTripleJApiAgent } = require('./agents/tripleJApiAgent');
 const { generateHTML } = require('./utils/htmlGenerator');
 const { getPreviousReport, getNewAdditions } = require('./utils/diffEngine');
 const { sendEmailNotification } = require('./utils/emailNotifier');
@@ -66,11 +65,6 @@ async function main() {
         results = results.concat(futuremagResults);
     }
     
-    if (config.happymag) {
-        const happymagResults = await runHappyMagAgent(config.happymag, exclusions);
-        results = results.concat(happymagResults);
-    }
-    
     if (config.listenbrainz) {
         const listenbrainzResults = await runListenBrainzAgent(config.listenbrainz, exclusions);
         results = results.concat(listenbrainzResults);
@@ -79,11 +73,12 @@ async function main() {
     if (config.rootsmag) {
         const rootsmagResults = await runRootsMagAgent(config.rootsmag, exclusions);
         results = results.concat(rootsmagResults);
-    }
-    
-    if (config.triplej) {
-        const triplejResults = await runTripleJAgent(config.triplej, exclusions);
+    } else if (configPath.includes('triplej')) {
+        const triplejResults = await runTripleJApiAgent(config.triplej || {}, config);
         results = results.concat(triplejResults);
+    } else if (config.spotify_embed) {
+        const spotifyResults = await runSpotifyEmbedAgent(config.spotify_embed, exclusions);
+        results = results.concat(spotifyResults);
     }
 
     // 2. Save Timestamped HTML & JSON in saved_searches
@@ -95,11 +90,10 @@ async function main() {
                        config.amrap?.searchName ||
                        config.bandcamp?.searchName ||
                        config.futuremag?.searchName ||
-                       config.happymag?.searchName ||
                        config.listenbrainz?.searchName ||
                        config.rootsmag?.searchName ||
-
                        config.triplej?.searchName ||
+                       config.spotify_embed?.searchName ||
                        'search_results';
     const safeSearchName = searchName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     
