@@ -13,6 +13,10 @@ git add .
 git commit -m "Update site changes"
 git push origin main
 
+Dashboard Generator cmd:
+
+npm run dashboard
+
 
 
 
