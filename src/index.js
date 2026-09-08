@@ -7,7 +7,7 @@ const { runBandcampAgent } = require('./agents/bandcampAgent');
 const { runFuturemagAgent } = require('./agents/futuremagAgent');
 const { runListenBrainzAgent } = require('./agents/listenBrainzAgent');
 const { runRootsMagAgent } = require('./agents/rootsMagAgent');
-const { runSpotifyEmbedAgent } = require('./agents/spotifyEmbedAgent');
+const { runSpotifyOAuthAgent } = require('./agents/spotifyOAuthAgent');
 const { runTripleJApiAgent } = require('./agents/tripleJApiAgent');
 const { generateHTML } = require('./utils/htmlGenerator');
 const { getPreviousReport, getNewAdditions } = require('./utils/diffEngine');
@@ -76,8 +76,8 @@ async function main() {
     } else if (configPath.includes('triplej')) {
         const triplejResults = await runTripleJApiAgent(config.triplej || {}, config);
         results = results.concat(triplejResults);
-    } else if (config.spotify_embed) {
-        const spotifyResults = await runSpotifyEmbedAgent(config.spotify_embed, exclusions);
+    } else if (config.spotify_oauth) {
+        const spotifyResults = await runSpotifyOAuthAgent(config.spotify_oauth, exclusions);
         results = results.concat(spotifyResults);
     }
 
@@ -93,7 +93,7 @@ async function main() {
                        config.listenbrainz?.searchName ||
                        config.rootsmag?.searchName ||
                        config.triplej?.searchName ||
-                       config.spotify_embed?.searchName ||
+                       config.spotify_oauth?.searchName ||
                        'search_results';
     const safeSearchName = searchName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     
@@ -140,6 +140,23 @@ async function main() {
 
     console.log(`Archived JSON saved to ${jsonPath}`);
     console.log(`Interactive HTML report saved to ${htmlPath}`);
+
+    // Update Dashboard Status
+    const dashboardStatusPath = path.join(savedSearchesDir, 'dashboard_status.json');
+    let dashboardStatus = {};
+    if (fs.existsSync(dashboardStatusPath)) {
+        dashboardStatus = JSON.parse(fs.readFileSync(dashboardStatusPath, 'utf8'));
+    }
+    
+    dashboardStatus[safeSearchName] = {
+        name: searchName,
+        lastRun: new Date().toISOString(),
+        totalSongsFound: results.length,
+        newSongsEmailed: newSongs.length,
+        status: "Success"
+    };
+    
+    fs.writeFileSync(dashboardStatusPath, JSON.stringify(dashboardStatus, null, 2));
 
     console.log("Search Agent finished execution.");
 }

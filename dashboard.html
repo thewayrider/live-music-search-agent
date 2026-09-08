@@ -1,0 +1,130 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Live Music Search Agent - Dashboard</title>
+        <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 40px; }
+            h1 { color: #38bdf8; text-align: center; margin-bottom: 40px; }
+            table { width: 100%; border-collapse: collapse; background-color: #1e293b; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+            th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid #334155; }
+            th { background-color: #0f172a; color: #94a3b8; text-transform: uppercase; font-size: 0.85em; letter-spacing: 0.05em; }
+            tr:last-child td { border-bottom: none; }
+            tr:hover { background-color: #334155; }
+            .refresh-btn { display: block; width: 200px; margin: 30px auto; padding: 12px; text-align: center; background-color: #38bdf8; color: #0f172a; text-decoration: none; font-weight: bold; border-radius: 4px; border: none; cursor: pointer; }
+            .refresh-btn:hover { background-color: #0ea5e9; }
+        </style>
+    </head>
+    <body>
+        <h1>Live Music Search Agent Overview</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Crawler Name</th>
+                    <th>Expected Schedule</th>
+                    <th>Last Run Time</th>
+                    <th>Total Songs Found</th>
+                    <th>New Additions</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+            <tr>
+                <td><strong>Air Charts</strong></td>
+                <td>Mon 16:00</td>
+                <td>Never</td>
+                <td>-</td>
+                <td>-</td>
+                <td><span style="color: #94a3b8;">Pending</span></td>
+            </tr>
+        
+            <tr>
+                <td><strong>Acid Stag</strong></td>
+                <td>Fri 16:00</td>
+                <td>Never</td>
+                <td>-</td>
+                <td>-</td>
+                <td><span style="color: #94a3b8;">Pending</span></td>
+            </tr>
+        
+            <tr>
+                <td><strong>Amrap</strong></td>
+                <td>Thu 16:00</td>
+                <td>Never</td>
+                <td>-</td>
+                <td>-</td>
+                <td><span style="color: #94a3b8;">Pending</span></td>
+            </tr>
+        
+            <tr>
+                <td><strong>Bandcamp</strong></td>
+                <td>Mon, Wed, Fri, Sat 09:00</td>
+                <td>Never</td>
+                <td>-</td>
+                <td>-</td>
+                <td><span style="color: #94a3b8;">Pending</span></td>
+            </tr>
+        
+            <tr>
+                <td><strong>ListenBrainz</strong></td>
+                <td>Mon, Wed, Fri, Sat 09:00</td>
+                <td>Never</td>
+                <td>-</td>
+                <td>-</td>
+                <td><span style="color: #94a3b8;">Pending</span></td>
+            </tr>
+        
+            <tr>
+                <td><strong>Futuremag</strong></td>
+                <td>Manual</td>
+                <td>Never</td>
+                <td>-</td>
+                <td>-</td>
+                <td><span style="color: #94a3b8;">Pending</span></td>
+            </tr>
+        
+            <tr>
+                <td><strong>Roots Mag</strong></td>
+                <td>Manual</td>
+                <td>Never</td>
+                <td>-</td>
+                <td>-</td>
+                <td><span style="color: #94a3b8;">Pending</span></td>
+            </tr>
+        
+            <tr>
+                <td><strong>Triple J</strong></td>
+                <td>Manual</td>
+                <td>Never</td>
+                <td>-</td>
+                <td>-</td>
+                <td><span style="color: #94a3b8;">Pending</span></td>
+            </tr>
+        
+            <tr>
+                <td><strong>Spotify: New Music Friday</strong></td>
+                <td>Manual</td>
+                <td>Never</td>
+                <td>-</td>
+                <td>-</td>
+                <td><span style="color: #94a3b8;">Pending</span></td>
+            </tr>
+        
+            <tr>
+                <td><strong>Spotify: All New Indie</strong></td>
+                <td>Manual</td>
+                <td>Never</td>
+                <td>-</td>
+                <td>-</td>
+                <td><span style="color: #94a3b8;">Pending</span></td>
+            </tr>
+        
+            </tbody>
+        </table>
+        <button class="refresh-btn" onclick="location.reload()">Refresh Page</button>
+    </body>
+    </html>
+    
