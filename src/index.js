@@ -9,6 +9,7 @@ const { runListenBrainzAgent } = require('./agents/listenBrainzAgent');
 const { runRootsMagAgent } = require('./agents/rootsMagAgent');
 const { runSpotifyOAuthAgent } = require('./agents/spotifyOAuthAgent');
 const { runTripleJApiAgent } = require('./agents/tripleJApiAgent');
+const { runTripleJUnearthedAgent } = require('./agents/tripleJUnearthedAgent');
 const { generateHTML } = require('./utils/htmlGenerator');
 const { getPreviousReport, getNewAdditions } = require('./utils/diffEngine');
 const { sendEmailNotification } = require('./utils/emailNotifier');
@@ -73,6 +74,9 @@ async function main() {
     if (config.rootsmag) {
         const rootsmagResults = await runRootsMagAgent(config.rootsmag, exclusions);
         results = results.concat(rootsmagResults);
+    } else if (configPath.includes('triplej_unearthed')) {
+        const triplejUnearthedResults = await runTripleJUnearthedAgent(config.triplej_unearthed || {}, config);
+        results = results.concat(triplejUnearthedResults);
     } else if (configPath.includes('triplej')) {
         const triplejResults = await runTripleJApiAgent(config.triplej || {}, config);
         results = results.concat(triplejResults);
@@ -92,6 +96,7 @@ async function main() {
                        config.futuremag?.searchName ||
                        config.listenbrainz?.searchName ||
                        config.rootsmag?.searchName ||
+                       config.triplej_unearthed?.searchName ||
                        config.triplej?.searchName ||
                        config.spotify_oauth?.searchName ||
                        'search_results';
