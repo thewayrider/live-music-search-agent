@@ -34,23 +34,6 @@ $settingsAcidStag = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStart
 Register-ScheduledTask -Action $actionAcidStag -Trigger $triggerAcidStag -Settings $settingsAcidStag -TaskName $taskNameAcidStag -Description "Runs the Acid Stag Crawler on Friday at 16:00" -Force
 Write-Host "Task '$taskNameAcidStag' registered successfully!"
 
-# Task 5: Spotify New Music Friday Crawler
-$taskNameSpotifyNMF = "LiveMusicSearchAgent_SpotifyNMF"
-$scriptPathSpotifyNMF = "$PSScriptRoot\run_spotify_new_music_friday_au_nz.bat"
-$actionSpotifyNMF = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPathSpotifyNMF`""
-$triggerSpotifyNMF = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Friday -At 9:00AM
-$settingsSpotifyNMF = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -Action $actionSpotifyNMF -Trigger $triggerSpotifyNMF -Settings $settingsSpotifyNMF -TaskName $taskNameSpotifyNMF -Description "Runs the Spotify New Music Friday Crawler on Friday at 09:00" -Force
-Write-Host "Task '$taskNameSpotifyNMF' registered successfully!"
-
-# Task 6: Spotify All New Indie Crawler
-$taskNameSpotifyANI = "LiveMusicSearchAgent_SpotifyANI"
-$scriptPathSpotifyANI = "$PSScriptRoot\run_spotify_all_new_indie.bat"
-$actionSpotifyANI = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPathSpotifyANI`""
-$triggerSpotifyANI = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Friday -At 9:00AM
-$settingsSpotifyANI = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -Action $actionSpotifyANI -Trigger $triggerSpotifyANI -Settings $settingsSpotifyANI -TaskName $taskNameSpotifyANI -Description "Runs the Spotify All New Indie Crawler on Friday at 09:00" -Force
-Write-Host "Task '$taskNameSpotifyANI' registered successfully!"
 
 # Task 7: Triple J API Crawler
 $taskNameTripleJ = "Triple J API Crawler"
