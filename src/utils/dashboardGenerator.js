@@ -8,11 +8,9 @@ const SCHEDULES = {
     'bandcamp_indie_discovery': 'Mon, Wed, Fri, Sat 09:00',
     'listenbrainz_indie_discovery': 'Mon, Wed, Fri, Sat 09:00',
     'futuremag_indie_discovery': 'Fri 09:00',
-    'roots_online_nz_indie_discovery': 'Fri 09:00',
+    'roots_mag': 'Fri 09:00',
     'triple_j_hitlist_discovery': 'Mon, Wed, Fri 12:00',
-    'triplej_unearthed_indie_discovery': 'Mon, Wed, Fri 14:00',
-    'spotify_new_music_friday_au_nz': 'Fri 09:00',
-    'spotify_all_new_indie': 'Fri 09:00'
+    'triplej_unearthed_indie_discovery': 'Mon, Wed, Fri 14:00'
 };
 
 function generateDashboard() {
@@ -29,11 +27,9 @@ function generateDashboard() {
         { id: 'bandcamp_indie_discovery', name: 'Bandcamp' },
         { id: 'listenbrainz_indie_discovery', name: 'ListenBrainz' },
         { id: 'futuremag_indie_discovery', name: 'Futuremag' },
-        { id: 'roots_online_nz_indie_discovery', name: 'Roots Mag' },
+        { id: 'roots_mag', name: 'Roots Mag' },
         { id: 'triple_j_hitlist_discovery', name: 'Triple J' },
-        { id: 'triplej_unearthed_indie_discovery', name: 'Triple J Unearthed' },
-        { id: 'spotify_new_music_friday_au_nz', name: 'Spotify: New Music Friday' },
-        { id: 'spotify_all_new_indie', name: 'Spotify: All New Indie' }
+        { id: 'triplej_unearthed_indie_discovery', name: 'Triple J Unearthed' }
     ];
 
     let rows = '';
