@@ -1,11 +1,20 @@
-# Task 1: Main Crawlers
+# Task 1: Main Crawlers (Bandcamp)
 $taskName = "LiveMusicSearchAgent"
 $scriptPath = "$PSScriptRoot\run_crawlers.bat"
 $action = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPath`""
 $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday, Wednesday, Friday, Saturday -At 9:00AM
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -Action $action -Trigger $trigger -Settings $settings -TaskName $taskName -Description "Runs the Live Music Search Agent on Mon/Wed/Fri/Sat at 9AM" -Force
+Register-ScheduledTask -Action $action -Trigger $trigger -Settings $settings -TaskName $taskName -Description "Runs the Bandcamp Crawler on Mon/Wed/Fri/Sat at 9AM" -Force
 Write-Host "Task '$taskName' registered successfully!"
+
+# Task 1b: ListenBrainz Crawler
+$taskNameLB = "LiveMusicSearchAgent_ListenBrainz"
+$scriptPathLB = "$PSScriptRoot\run_listenbrainz.bat"
+$actionLB = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPathLB`""
+$triggerLB = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday, Friday -At 9:00AM
+$settingsLB = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+Register-ScheduledTask -Action $actionLB -Trigger $triggerLB -Settings $settingsLB -TaskName $taskNameLB -Description "Runs the ListenBrainz Crawler on Mon/Fri at 9AM" -Force
+Write-Host "Task '$taskNameLB' registered successfully!"
 
 # Task 2: Air Charts Crawler
 $taskNameAir = "LiveMusicSearchAgent_AirCharts"
