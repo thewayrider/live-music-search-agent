@@ -4,3 +4,4 @@ node_modules/
 *.log
 saved_searches/
 configs/secrets.json
+configs/last_rs_reminder.json
