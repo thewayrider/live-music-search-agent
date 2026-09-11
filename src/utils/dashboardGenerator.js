@@ -6,11 +6,11 @@ const SCHEDULES = {
     'acid_stag_discovery': 'Fri 16:00',
     'amrap_indie_discovery': 'Thu 16:00',
     'bandcamp_indie_discovery': 'Mon, Wed, Fri, Sat 09:00',
-    'listenbrainz_indie_discovery': 'Mon, Wed, Fri, Sat 09:00',
+    'listenbrainz_indie_discovery': 'Mon, Fri 09:00',
     'futuremag_indie_discovery': 'Fri 09:00',
     'roots_mag': 'Fri 09:00',
     'triple_j_hitlist_discovery': 'Mon, Wed, Fri 12:00',
-    'triplej_unearthed_indie_discovery': 'Mon, Wed, Fri 14:00'
+    'triple_j_unearthed_discovery': 'Mon, Wed, Fri 14:00'
 };
 
 function generateDashboard() {
@@ -29,7 +29,7 @@ function generateDashboard() {
         { id: 'futuremag_indie_discovery', name: 'Futuremag' },
         { id: 'roots_mag', name: 'Roots Mag' },
         { id: 'triple_j_hitlist_discovery', name: 'Triple J' },
-        { id: 'triplej_unearthed_indie_discovery', name: 'Triple J Unearthed' }
+        { id: 'triple_j_unearthed_discovery', name: 'Triple J Unearthed' }
     ];
 
     let rows = '';

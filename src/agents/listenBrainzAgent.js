@@ -15,6 +15,7 @@ const DEFAULTS = {
   allowedTypes: null,   
   cacheFile: path.join(__dirname, "../../saved_searches/cache/listenbrainz-mb-origin.json"), 
   userAgent: "NewIndieFriday/0.1 ( https://kimrampling.com )",
+  globalSearch: false,
 };
 
 const ISO_TO_COUNTRY = { AU: "Australia", NZ: "New Zealand" };
@@ -27,9 +28,12 @@ async function runListenBrainzAgent(config = {}, exclusions = {}) {
   const raw = await fetchFreshReleases(http, options);
   console.log(`[ListenBrainz Agent] Fresh releases fetched: ${raw.length}`);
 
+  // Merge config and exclusions for filters (to catch targetGenres)
+  const filters = { ...exclusions, ...config };
+
   // INTELLIGENT SORTING: Prioritize releases that match our target genres
   // so that the MusicBrainz budget is spent on likely candidates first.
-  const targetGenres = exclusions.targetGenres || [];
+  const targetGenres = filters.targetGenres || [];
   const targetKeywords = targetGenres.map(g => g.toLowerCase());
   
   const sortedRaw = raw.sort((a, b) => {
@@ -48,7 +52,7 @@ async function runListenBrainzAgent(config = {}, exclusions = {}) {
   const cacheStart = mbCache.size;
   console.log(`[ListenBrainz Agent] MB enrichment ON (max ${options.maxEnrich} new lookups; ${cacheStart} cached origins loaded)`);
 
-  const hintMap = buildHintMap(exclusions);
+  const hintMap = buildHintMap(filters);
   let enrichCount = 0;   
   let cacheHits = 0;     
   let hintMatches = 0;
@@ -89,10 +93,10 @@ async function runListenBrainzAgent(config = {}, exclusions = {}) {
     }
 
     const isTarget = country === "Australia" || country === "New Zealand";
-    if (!isTarget && !options.includeUnresolved) continue;
+    if (!options.globalSearch && !isTarget && !options.includeUnresolved) continue;
 
     const combinedText = `${artist} ${title} ${(r.release_tags || []).join(" ")}`.toLowerCase();
-    const genresMapped = inferGenresMapped(combinedText, exclusions);
+    const genresMapped = inferGenresMapped(combinedText, filters);
     const rgMbid = firstDefined(r, ["release_group_mbid"]);
     const relMbid = firstDefined(r, ["release_mbid"]);
     const score = scoreRelease({ releaseType, genresMapped, country });
@@ -107,7 +111,7 @@ async function runListenBrainzAgent(config = {}, exclusions = {}) {
       sourceUrl: rgMbid
         ? `https://musicbrainz.org/release-group/${rgMbid}`
         : relMbid ? `https://musicbrainz.org/release/${relMbid}` : "#",
-      marketsAvailable: inferMarkets(country, exclusions),
+      marketsAvailable: inferMarkets(country, filters),
       genresMapped,
       artistCountryMapped: country,
       score,
@@ -129,7 +133,7 @@ async function runListenBrainzAgent(config = {}, exclusions = {}) {
     }
   }
 
-  const deduped = dedupeAndSort(releases, exclusions);
+  const deduped = dedupeAndSort(releases, filters);
 
   // MAPPING TO UNIFIED AGENT FORMAT
   const unifiedResults = deduped.map(r => {
