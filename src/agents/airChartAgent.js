@@ -65,14 +65,23 @@ async function runAirChartAgent(config, exclusions) {
                 else if (link.includes('independent-label-albums')) categoryName = "Independent Label Albums";
                 else if (link.includes('independent-label-singles')) categoryName = "Independent Label Singles";
 
-                results.push({
-                    title: `${item.artist} - ${item.title}`,
-                    channel: categoryName,
-                    url: item.url,
-                    views: "New Entry",
-                    uploadedAt: "This Week",
-                    description: `New to ${categoryName} this week (Time in Charts: 1).`
-                });
+                const formattedTitle = `${item.artist} - ${item.title}`;
+
+                // Check if this song is already in the results
+                const isDuplicate = results.some(r => r.title === formattedTitle);
+                
+                if (!isDuplicate) {
+                    results.push({
+                        title: formattedTitle,
+                        channel: categoryName,
+                        url: item.url,
+                        views: "New Entry",
+                        uploadedAt: "This Week",
+                        description: `New to ${categoryName} this week (Time in Charts: 1).`
+                    });
+                } else {
+                    console.log(`[AIR Chart Agent] Skipping duplicate entry: ${formattedTitle}`);
+                }
             }
         }
         
