@@ -10,6 +10,7 @@ const { runRootsMagAgent } = require('./agents/rootsMagAgent');
 const { runSpotifyOAuthAgent } = require('./agents/spotifyOAuthAgent');
 const { runTripleJApiAgent } = require('./agents/tripleJApiAgent');
 const { runTripleJUnearthedAgent } = require('./agents/tripleJUnearthedAgent');
+const { runMusicBrainzAgent } = require('./agents/musicBrainzAgent');
 const { generateHTML } = require('./utils/htmlGenerator');
 const { getPreviousReport, getNewAdditions } = require('./utils/diffEngine');
 const { sendEmailNotification } = require('./utils/emailNotifier');
@@ -71,6 +72,11 @@ async function main() {
         results = results.concat(listenbrainzResults);
     }
     
+    if (config.musicbrainz) {
+        const musicbrainzResults = await runMusicBrainzAgent(config.musicbrainz, exclusions);
+        results = results.concat(musicbrainzResults);
+    }
+    
     if (config.rootsmag) {
         const rootsmagResults = await runRootsMagAgent(config.rootsmag, exclusions);
         results = results.concat(rootsmagResults);
@@ -95,6 +101,7 @@ async function main() {
                        config.bandcamp?.searchName ||
                        config.futuremag?.searchName ||
                        config.listenbrainz?.searchName ||
+                       config.musicbrainz?.searchName ||
                        config.rootsmag?.searchName ||
                        config.triplej_unearthed?.searchName ||
                        config.triplej?.searchName ||
