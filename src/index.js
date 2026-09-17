@@ -14,6 +14,8 @@ const { runMusicBrainzAgent } = require('./agents/musicBrainzAgent');
 const { generateHTML } = require('./utils/htmlGenerator');
 const { getPreviousReport, getNewAdditions } = require('./utils/diffEngine');
 const { sendEmailNotification } = require('./utils/emailNotifier');
+const { aggregateCrawlerMetrics } = require('./utils/metricsAggregator');
+const { syncMetricsToGist } = require('./utils/gistSync');
 
 async function main() {
     console.log("Initializing Live Music Search Agent...");
@@ -169,6 +171,15 @@ async function main() {
     };
     
     fs.writeFileSync(dashboardStatusPath, JSON.stringify(dashboardStatus, null, 2));
+    
+    // 3. Aggregate historical metrics & sync telemetry to GitHub Gist
+    try {
+        console.log("\n[Telemetry] Updating aggregated crawler statistics...");
+        const aggregated = aggregateCrawlerMetrics();
+        await syncMetricsToGist(aggregated);
+    } catch (metricErr) {
+        console.warn("[Telemetry] Warning updating analytics or Gist:", metricErr.message);
+    }
 
     console.log("Search Agent finished execution.");
 }
