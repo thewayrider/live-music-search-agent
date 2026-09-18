@@ -79,3 +79,12 @@ $triggerRootsMag = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Friday -At 9:00A
 $settingsRootsMag = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 Register-ScheduledTask -Action $actionRootsMag -Trigger $triggerRootsMag -Settings $settingsRootsMag -TaskName $taskNameRootsMag -Description "Runs the Roots Mag Crawler on Friday at 09:00" -Force
 Write-Host "Task '$taskNameRootsMag' registered successfully!"
+
+# Task 11: MusicBrainz Crawler
+$taskNameMusicBrainz = "LiveMusicSearchAgent_MusicBrainz"
+$scriptPathMusicBrainz = "$PSScriptRoot\run_musicbrainz.bat"
+$actionMusicBrainz = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPathMusicBrainz`""
+$triggerMusicBrainz = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday, Wednesday, Friday -At 9:30AM
+$settingsMusicBrainz = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+Register-ScheduledTask -Action $actionMusicBrainz -Trigger $triggerMusicBrainz -Settings $settingsMusicBrainz -TaskName $taskNameMusicBrainz -Description "Runs the MusicBrainz Crawler on Mon, Wed, Fri at 09:30" -Force
+Write-Host "Task '$taskNameMusicBrainz' registered successfully!"

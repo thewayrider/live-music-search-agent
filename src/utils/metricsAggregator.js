@@ -7,7 +7,7 @@ const AGENTS = [
     { id: 'amrap_indie_discovery', name: 'Amrap', schedule: 'Thu 16:00' },
     { id: 'bandcamp_indie_discovery', name: 'Bandcamp', schedule: 'Mon, Wed, Fri, Sat 09:00' },
     { id: 'listenbrainz_indie_discovery', name: 'ListenBrainz', schedule: 'Mon, Fri 09:00' },
-    { id: 'musicbrainz_indie_discovery', name: 'MusicBrainz', schedule: 'Manual' },
+    { id: 'musicbrainz_indie_discovery', name: 'MusicBrainz', schedule: 'Mon, Wed, Fri 09:30' },
     { id: 'futuremag_indie_discovery', name: 'Futuremag', schedule: 'Fri 09:00' },
     { id: 'roots_mag', name: 'Roots Mag', schedule: 'Fri 09:00' },
     { id: 'triple_j_hitlist_discovery', name: 'Triple J', schedule: 'Mon, Wed, Fri 12:00' },
