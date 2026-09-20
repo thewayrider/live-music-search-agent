@@ -28,6 +28,7 @@ Each object must have these exact keys:
 - "artist": The name of the artist/band (string)
 - "title": The name of the song/album/EP (string)
 - "releaseType": Either "single", "ep", or "album" (string)
+- "genres": A comma-separated list of genres explicitly mentioned for the track (string, or null if none)
 
 Article Text:
 ${articleText.substring(0, 15000)}`;

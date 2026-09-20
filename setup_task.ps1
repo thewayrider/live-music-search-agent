@@ -44,13 +44,13 @@ Register-ScheduledTask -Action $actionAcidStag -Trigger $triggerAcidStag -Settin
 Write-Host "Task '$taskNameAcidStag' registered successfully!"
 
 
-# Task 7: Triple J API Crawler
-$taskNameTripleJ = "Triple J API Crawler"
+# Task 7: Triple J Weekly Reminder
+$taskNameTripleJ = "Triple J Weekly Reminder"
 $scriptPathTripleJ = "$PSScriptRoot\run_triplej.bat"
 $actionTripleJ = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPathTripleJ`""
-$triggerTripleJ = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday, Wednesday, Friday -At 12:00PM
+$triggerTripleJ = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Friday -At 12:00PM
 $settingsTripleJ = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -Action $actionTripleJ -Trigger $triggerTripleJ -Settings $settingsTripleJ -TaskName $taskNameTripleJ -Description "Runs the Triple J API Crawler on Mon, Wed, Fri at 12:00" -Force
+Register-ScheduledTask -Action $actionTripleJ -Trigger $triggerTripleJ -Settings $settingsTripleJ -TaskName $taskNameTripleJ -Description "Sends the Triple J Weekly Reminder on Friday at 12:00" -Force
 Write-Host "Task '$taskNameTripleJ' registered successfully!"
 
 # Task 8: Triple J Unearthed Crawler

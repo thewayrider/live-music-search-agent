@@ -1,75 +1,98 @@
+const cheerio = require("cheerio");
+const { extractReleasesWithAI } = require("../utils/aiScraper");
+
 const DEFAULTS = {
-  sourceService: 'Triple J Unearthed',
-  defaultCountry: 'Australia',
+  baseUrl: "https://www.abc.net.au/triplejunearthed",
+  sourceService: "Triple J Unearthed",
+  userAgent: "music-release-agent/1.0 ( https://kimrampling.com )",
 };
 
-async function getRecentPlays(limit = 100) {
-    const url = `https://music.abcradio.net.au/api/v1/plays/search.json?station=unearthed&limit=${limit}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`ABC API Error: ${res.statusText}`);
-    return await res.json();
+// The strict genre combinations requested by the user, converted to Sets for order-agnostic matching.
+const ALLOWED_SETS = [
+    new Set(['pop', 'rock', 'indie']),
+    new Set(['pop', 'indie']),
+    new Set(['indie', 'rock']),       // Also covers Rock/Indie
+    new Set(['rock', 'indie', 'experimental']),
+    new Set(['indie', 'pop', 'electronic'])
+];
+
+function parseGenresToSet(genreString) {
+    if (!genreString || typeof genreString !== 'string') return new Set();
+    // Replace non-alphabetic characters (like '/', ',', '&') with spaces and split
+    const words = genreString.toLowerCase().replace(/[^a-z]+/g, ' ').trim().split(/\s+/);
+    return new Set(words.filter(w => w.length > 0));
 }
 
-function scoreRelease(item) {
-    let score = 6; // Base score for Unearthed (higher baseline for discovery)
-    if (item.recording && item.recording.artists && item.recording.artists.some(a => a.is_australian)) score += 2;
-    return score;
+function isAllowedGenreSet(genreString) {
+    const trackSet = parseGenresToSet(genreString);
+    if (trackSet.size === 0) return false;
+    
+    for (const allowedSet of ALLOWED_SETS) {
+        if (trackSet.size === allowedSet.size && [...trackSet].every(g => allowedSet.has(g))) {
+            return true;
+        }
+    }
+    return false;
 }
 
-function bucketFromScore(score) {
-    if (score >= 7) return "Best matches";
-    if (score >= 5) return "Worth checking";
-    return "Manual review";
+function cleanText(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .trim();
 }
 
 async function runTripleJUnearthedAgent(config = {}, exclusions = {}) {
-    const options = { ...DEFAULTS, ...config };
-    console.log(`[Triple J Unearthed Agent] Fetching recently played tracks from ABC API...`);
-    
-    const data = await getRecentPlays(100);
-    const currentYear = new Date().getFullYear().toString();
-    
-    const unifiedResults = [];
-    const seenSongs = new Set();
-    
-    for (const item of data.items) {
-        if (!item.recording) continue; // Unearthed tracks often don't have 'release' objects
-        
-        const artist = item.recording.artists ? item.recording.artists.map(a => a.name).join(', ') : 'Unknown';
-        const title = item.recording.title || 'Unknown';
-        const songKey = `${artist}-${title}`.toLowerCase();
-        
-        if (seenSongs.has(songKey)) continue; // Deduplicate
-        seenSongs.add(songKey);
-        
-        const score = scoreRelease(item);
-        const bucket = bucketFromScore(score);
-        
-        // Artwork is sometimes in release, sometimes recording. Try recording first for Unearthed.
-        let artworkUrl = '';
-        if (item.recording.artwork && item.recording.artwork.length > 0) {
-            artworkUrl = item.recording.artwork[0].url;
-        } else if (item.release && item.release.artwork && item.release.artwork.length > 0) {
-            artworkUrl = item.release.artwork[0].url;
-        }
-        
-        const imgTag = artworkUrl ? `<img src="${artworkUrl}" style="height:50px">` : '';
-        
-        let description = `Score: ${score} | Played: ${item.played_time.slice(0,10)}`;
-        if (imgTag) description += ` | Cover: ${imgTag}`;
-        
-        unifiedResults.push({
-            title: `${artist} - ${title}`,
-            channel: options.sourceService,
-            url: `https://www.abc.net.au/triplejunearthed/`, 
-            views: bucket,
-            uploadedAt: item.played_time.slice(0,10),
-            description: description
-        });
-    }
-    
-    console.log(`[Triple J Unearthed Agent] Found ${unifiedResults.length} tracks in the last 100 plays.`);
-    return unifiedResults;
+  const options = { ...DEFAULTS, ...config };
+  console.log(`[Triple J Unearthed Agent] Fetching main page HTML...`);
+
+  const res = await fetch(options.baseUrl, {
+    headers: { "User-Agent": options.userAgent, Accept: "text/html" },
+  });
+  
+  if (!res || !res.ok) {
+    throw new Error(`Unearthed: Fetch failed (${res && res.status})`);
+  }
+  
+  const html = await res.text();
+  const $ = cheerio.load(html);
+  
+  // Extract clean text from the body, adding spaces to block elements to prevent word joining
+  $('br, p, div, h1, h2, h3, h4, h5, h6, li, strong, b, span').append(' ');
+  const bodyText = cleanText($('body').text());
+
+  console.log(`[Triple J Unearthed Agent] AI extracting from full page content...`);
+  const aiResults = await extractReleasesWithAI(bodyText);
+
+  console.log(`[Triple J Unearthed Agent] Extracted ${aiResults.length} total tracks. Filtering by strict genre combinations...`);
+
+  const items = [];
+  for (const rel of aiResults) {
+      if (isAllowedGenreSet(rel.genres)) {
+          items.push(rel);
+      } else {
+          console.log(`[Triple J Unearthed Agent] Filtering out: ${rel.artist} - ${rel.title} (Genres: ${rel.genres || 'none'})`);
+      }
+  }
+
+  // MAPPING TO UNIFIED AGENT FORMAT
+  const unifiedResults = items.map(r => {
+      // Format genres for description display
+      const displayGenres = r.genres ? r.genres.replace(/[^a-zA-Z]/g, ' ').replace(/\s+/g, ' / ').trim() : 'Unknown';
+      let description = `Type: ${r.releaseType} | Genres: ${displayGenres}`;
+
+      return {
+          title: `${r.artist} - ${r.title}`,
+          channel: "Triple J Unearthed",
+          url: options.baseUrl, // Unearthed doesn't easily provide direct article links on the main page without deep parsing
+          views: "Manual review", // Defaulting bucket since we are bypassing scoring
+          uploadedAt: "unknown", // Bypassing release date checks
+          description: description
+      };
+  });
+
+  console.log(`[Triple J Unearthed Agent] Final tracks matched: ${unifiedResults.length}`);
+  return unifiedResults;
 }
 
 module.exports = { runTripleJUnearthedAgent };
