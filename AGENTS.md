@@ -13,7 +13,7 @@
 - At the end of every crawler run (`src/index.js`), `metricsAggregator.js` computes fresh stats and `gistSync.js` updates the Gist.
 
 ## Crawler Health & Diagnostics Criteria
-- **10 Crawlers**: Air Charts, Acid Stag, Amrap, Bandcamp, ListenBrainz, MusicBrainz (manual), Futuremag, Roots Mag, Triple J Hitlist, Triple J Unearthed.
+- **9 Crawlers**: Air Charts, Acid Stag, Amrap, Bandcamp, ListenBrainz, MusicBrainz, Futuremag, Roots Mag, Triple J Unearthed.
 - **Evaluation Metrics**: Today, past 7 days, and all-time new song additions vs. baseline pool.
 - **Non-Performing Alerts**: Flag crawlers with >= 4 consecutive zero-discovery runs or >= 10 days of inactivity for review, filter modification, or elimination.
 - **Local Dashboard**: [`view_dashboard.bat`](file:///C:/Users/kimra/Desktop/Projects/live-music-search-agent/view_dashboard.bat) runs `dashboardGenerator.js` to compile [`dashboard.html`](file:///C:/Users/kimra/Desktop/Projects/live-music-search-agent/dashboard.html).
