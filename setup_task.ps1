@@ -1,90 +1,30 @@
-# Task 1: Main Crawlers (Bandcamp)
-$taskName = "LiveMusicSearchAgent"
-$scriptPath = "$PSScriptRoot\run_crawlers.bat"
-$action = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPath`""
-$trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday, Wednesday, Friday, Saturday -At 9:00AM
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -Action $action -Trigger $trigger -Settings $settings -TaskName $taskName -Description "Runs the Bandcamp Crawler on Mon/Wed/Fri/Sat at 9AM" -Force
-Write-Host "Task '$taskName' registered successfully!"
+$jsonPath = "$PSScriptRoot\configs\schedules.json"
 
-# Task 1b: ListenBrainz Crawler
-$taskNameLB = "LiveMusicSearchAgent_ListenBrainz"
-$scriptPathLB = "$PSScriptRoot\run_listenbrainz.bat"
-$actionLB = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPathLB`""
-$triggerLB = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday, Friday -At 9:00AM
-$settingsLB = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -Action $actionLB -Trigger $triggerLB -Settings $settingsLB -TaskName $taskNameLB -Description "Runs the ListenBrainz Crawler on Mon/Fri at 9AM" -Force
-Write-Host "Task '$taskNameLB' registered successfully!"
+if (-Not (Test-Path $jsonPath)) {
+    Write-Host "Error: schedules.json not found at $jsonPath"
+    exit 1
+}
 
-# Task 2: Air Charts Crawler
-$taskNameAir = "LiveMusicSearchAgent_AirCharts"
-$scriptPathAir = "$PSScriptRoot\run_air_charts.bat"
-$actionAir = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPathAir`""
-$triggerAir = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday -At 4:00PM
-$settingsAir = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -Action $actionAir -Trigger $triggerAir -Settings $settingsAir -TaskName $taskNameAir -Description "Runs the Air Charts Crawler on Monday at 16:00" -Force
-Write-Host "Task '$taskNameAir' registered successfully!"
+$schedules = Get-Content $jsonPath | ConvertFrom-Json
 
-# Task 3: AMRAP Crawler
-$taskNameAmrap = "LiveMusicSearchAgent_Amrap"
-$scriptPathAmrap = "$PSScriptRoot\run_amrap.bat"
-$actionAmrap = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPathAmrap`""
-$triggerAmrap = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Thursday -At 4:00PM
-$settingsAmrap = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -Action $actionAmrap -Trigger $triggerAmrap -Settings $settingsAmrap -TaskName $taskNameAmrap -Description "Runs the AMRAP Crawler on Thursday at 16:00" -Force
-Write-Host "Task '$taskNameAmrap' registered successfully!"
+foreach ($task in $schedules) {
+    $taskName = $task.name
+    $scriptPath = "$PSScriptRoot\" + $task.script
+    
+    # Unregister existing task to prevent duplicate entries or orphaned tasks
+    Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
 
-# Task 4: Acid Stag Crawler
-$taskNameAcidStag = "LiveMusicSearchAgent_AcidStag"
-$scriptPathAcidStag = "$PSScriptRoot\run_acid_stag.bat"
-$actionAcidStag = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPathAcidStag`""
-$triggerAcidStag = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Friday -At 4:00PM
-$settingsAcidStag = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -Action $actionAcidStag -Trigger $triggerAcidStag -Settings $settingsAcidStag -TaskName $taskNameAcidStag -Description "Runs the Acid Stag Crawler on Friday at 16:00" -Force
-Write-Host "Task '$taskNameAcidStag' registered successfully!"
+    $action = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPath`""
+    
+    # Pass the array of days natively to -DaysOfWeek
+    $days = $task.days
+    $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek $days -At $task.time
+    
+    $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+    
+    Register-ScheduledTask -Action $action -Trigger $trigger -Settings $settings -TaskName $taskName -Description $task.description -Force | Out-Null
+    
+    Write-Host "Task '$taskName' registered successfully!"
+}
 
-
-# Task 7: Triple J Weekly Reminder
-$taskNameTripleJ = "Triple J Weekly Reminder"
-$scriptPathTripleJ = "$PSScriptRoot\run_triplej.bat"
-$actionTripleJ = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPathTripleJ`""
-$triggerTripleJ = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Friday -At 12:00PM
-$settingsTripleJ = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -Action $actionTripleJ -Trigger $triggerTripleJ -Settings $settingsTripleJ -TaskName $taskNameTripleJ -Description "Sends the Triple J Weekly Reminder on Friday at 12:00" -Force
-Write-Host "Task '$taskNameTripleJ' registered successfully!"
-
-# Task 8: Triple J Unearthed Crawler
-$taskNameTripleJUnearthed = "Triple J Unearthed Crawler"
-$scriptPathTripleJUnearthed = "$PSScriptRoot\run_triplej_unearthed.bat"
-$actionTripleJUnearthed = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPathTripleJUnearthed`""
-$triggerTripleJUnearthed = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday, Wednesday, Friday -At 2:00PM
-$settingsTripleJUnearthed = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -Action $actionTripleJUnearthed -Trigger $triggerTripleJUnearthed -Settings $settingsTripleJUnearthed -TaskName $taskNameTripleJUnearthed -Description "Runs the Triple J Unearthed Crawler on Mon, Wed, Fri at 14:00" -Force
-Write-Host "Task '$taskNameTripleJUnearthed' registered successfully!"
-
-# Task 9: Futuremag Crawler
-$taskNameFuturemag = "LiveMusicSearchAgent_Futuremag"
-$scriptPathFuturemag = "$PSScriptRoot\run_futuremag.bat"
-$actionFuturemag = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPathFuturemag`""
-$triggerFuturemag = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Friday -At 9:00AM
-$settingsFuturemag = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -Action $actionFuturemag -Trigger $triggerFuturemag -Settings $settingsFuturemag -TaskName $taskNameFuturemag -Description "Runs the Futuremag Crawler on Friday at 09:00" -Force
-Write-Host "Task '$taskNameFuturemag' registered successfully!"
-
-# Task 10: Roots Mag Crawler
-$taskNameRootsMag = "LiveMusicSearchAgent_RootsMag"
-$scriptPathRootsMag = "$PSScriptRoot\run_roots_mag.bat"
-$actionRootsMag = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPathRootsMag`""
-$triggerRootsMag = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Friday -At 9:00AM
-$settingsRootsMag = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -Action $actionRootsMag -Trigger $triggerRootsMag -Settings $settingsRootsMag -TaskName $taskNameRootsMag -Description "Runs the Roots Mag Crawler on Friday at 09:00" -Force
-Write-Host "Task '$taskNameRootsMag' registered successfully!"
-
-# Task 11: MusicBrainz Crawler
-$taskNameMusicBrainz = "LiveMusicSearchAgent_MusicBrainz"
-$scriptPathMusicBrainz = "$PSScriptRoot\run_musicbrainz.bat"
-$actionMusicBrainz = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$scriptPathMusicBrainz`""
-$triggerMusicBrainz = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday, Wednesday, Friday -At 9:30AM
-$settingsMusicBrainz = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -Action $actionMusicBrainz -Trigger $triggerMusicBrainz -Settings $settingsMusicBrainz -TaskName $taskNameMusicBrainz -Description "Runs the MusicBrainz Crawler on Mon, Wed, Fri at 09:30" -Force
-Write-Host "Task '$taskNameMusicBrainz' registered successfully!"
+Write-Host "All scheduled tasks successfully registered from schedules.json!"

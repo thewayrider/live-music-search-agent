@@ -21,3 +21,8 @@
 ## Related Projects
 - **`NewIndieFriday`**: Public music portal & Sanity Studio (`streamusique.com`).
 - **`live-music-crawler-monitor-android`**: F-Droid compatible Android client displaying live metrics from the Gist.
+
+## Google API Billing & GenAI App Builder
+- **Scraper Billing (Google AI Studio)**: The custom Node.js web scrapers in this project (e.g., `aiScraper.js`) rely on standard Gemini API calls via Google AI Studio. This usage is billed to your AI Studio prepayment balance.
+- **GenAI App Builder Credits**: Promotional credits for "GenAI App Builder" (now Vertex AI Agent Builder) are **exclusively** for building conversational AI search engines grounded in enterprise data (e.g., querying your `saved_searches` database via a chat UI). 
+- **Exclusions**: Agent Builder credits **do not** cover standard Gemini API scraping tasks, nor do they cover the hosting/infrastructure required to build standard web applications (like a React-based Master Control Panel).
