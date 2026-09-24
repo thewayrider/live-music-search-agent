@@ -77,4 +77,63 @@ ${articleText.substring(0, 15000)}`;
     return [];
 }
 
-module.exports = { extractReleasesWithAI };
+async function verifyArtistOriginWithAI(artistName, label) {
+    const token = getGeminiToken();
+    if (!token) return { is_target_region: false, origin_country: null, confidence: "low", reasoning: "No Gemini token found" };
+
+    // Gemini Free Tier in 2026 has a limit of 5 requests per minute.
+    await new Promise(r => setTimeout(r, 12500));
+
+    const prompt = `You are a music industry data validation agent. 
+I will provide an Artist Name and a Record Label.
+Your job is to determine if this artist is primarily based in or originating from Ireland, Australia, or New Zealand.
+You must return your response as a strict JSON object matching this schema:
+{
+  "is_target_region": boolean,
+  "origin_country": "string (or null)",
+  "confidence": "high/medium/low",
+  "reasoning": "brief 1-sentence explanation"
+}
+
+Input:
+Artist: ${artistName}
+Label: ${label}`;
+
+    const genAI = new GoogleGenerativeAI(token);
+    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+
+    let attempts = 0;
+    while (attempts < 3) {
+        try {
+            const result = await model.generateContent({
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.1,
+                    responseMimeType: "application/json",
+                }
+            });
+
+            let generatedText = result.response.text().trim();
+            const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
+            
+            if (jsonMatch) {
+                return JSON.parse(jsonMatch[0]);
+            } else {
+                return JSON.parse(generatedText);
+            }
+        } catch (e) {
+            attempts++;
+            if (e.message.includes("503") || e.message.includes("429")) {
+                console.log(`[Gemini API] Error: ${e.message}. Retrying in 35s...`);
+                await new Promise(r => setTimeout(r, 35000));
+            } else {
+                console.error("Failed to verify artist origin with Gemini (SDK Error):", e.message);
+                return { is_target_region: false, origin_country: null, confidence: "low", reasoning: "SDK Error" };
+            }
+        }
+    }
+    console.error("Failed to verify artist origin after 3 attempts.");
+    return { is_target_region: false, origin_country: null, confidence: "low", reasoning: "API limit exceeded" };
+}
+
+module.exports = { extractReleasesWithAI, verifyArtistOriginWithAI };

@@ -11,6 +11,7 @@ const { runSpotifyOAuthAgent } = require('./agents/spotifyOAuthAgent');
 const { runTripleJApiAgent } = require('./agents/tripleJApiAgent');
 const { runTripleJUnearthedAgent } = require('./agents/tripleJUnearthedAgent');
 const { runMusicBrainzAgent } = require('./agents/musicBrainzAgent');
+const { runDeezerAgent } = require('./agents/deezerAgent');
 const { generateHTML } = require('./utils/htmlGenerator');
 const { getPreviousReport, getNewAdditions } = require('./utils/diffEngine');
 const { sendEmailNotification } = require('./utils/emailNotifier');
@@ -88,6 +89,9 @@ async function main() {
     } else if (configPath.includes('triplej')) {
         const triplejResults = await runTripleJApiAgent(config.triplej || {}, config);
         results = results.concat(triplejResults);
+    } else if (config.deezer) {
+        const deezerResults = await runDeezerAgent(config.deezer, exclusions);
+        results = results.concat(deezerResults);
     } else if (config.spotify_oauth) {
         const spotifyResults = await runSpotifyOAuthAgent(config.spotify_oauth, exclusions);
         results = results.concat(spotifyResults);
@@ -107,6 +111,7 @@ async function main() {
                        config.rootsmag?.searchName ||
                        config.triplej_unearthed?.searchName ||
                        config.triplej?.searchName ||
+                       config.deezer?.searchName ||
                        config.spotify_oauth?.searchName ||
                        'search_results';
     const safeSearchName = searchName.replace(/[^a-z0-9]/gi, '_').toLowerCase();

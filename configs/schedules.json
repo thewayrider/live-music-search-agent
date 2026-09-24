@@ -77,6 +77,13 @@
     "description": "Runs the MusicBrainz Crawler on Mon, Wed, Fri at 09:30",
     "script": "run_musicbrainz.bat",
     "days": ["Monday", "Wednesday", "Friday"],
-    "time": "09:30AM"
+  },
+  {
+    "id": "deezer",
+    "name": "LiveMusicSearchAgent_Deezer",
+    "description": "Runs the Deezer Crawler on Friday at 11:00",
+    "script": "run_deezer.bat",
+    "days": ["Friday"],
+    "time": "11:00AM"
   }
 ]

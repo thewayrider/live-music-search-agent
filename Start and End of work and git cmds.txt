@@ -17,7 +17,6 @@ Dashboard Generator cmd:
 
 npm run dashboard
 
-
 ----
 
 UPDATING SCHEDULES ON THE MINI PC
@@ -26,3 +25,13 @@ If you ever add a new crawler or change the days/times a crawler runs:
 1. Make the changes to setup_task.ps1 on your Main PC and push to GitHub.
 2. On the MINI PC, run 'git pull' to download the updated setup script.
 3. On the MINI PC, right-click setup_task.ps1 in File Explorer and select "Run with PowerShell" to update Windows Task Scheduler.
+
+----
+Workflow for Future Crawler Additions / Retirements:
+
+Whenever you add or retire a crawler in `live-music-search-agent`:
+1. Add or remove its entry in src/utils/metricsAggregator.js`
+2. Push to git and run `git pull` on your Mini PC.
+3. The next time the crawlers sync to Gist (or when you run a manual sync), your 
+Android app will immediately reflect the new crawlers with zero app rebuilds required.
+
