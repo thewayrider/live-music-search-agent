@@ -27,7 +27,7 @@ foreach ($task in $schedules) {
     $days = $task.days
     $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek $days -At $task.time
     
-    $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+    $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RunOnlyIfNetworkAvailable
     
     Register-ScheduledTask -Action $action -Trigger $trigger -Settings $settings -TaskName $taskName -Description $task.description -Force | Out-Null
     

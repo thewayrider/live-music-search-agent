@@ -269,7 +269,7 @@
             <div class="stat-card">
                 <div class="label">All-Time Discoveries</div>
                 <div class="value">466</div>
-                <div class="subtext">From 55 recorded crawler runs</div>
+                <div class="subtext">From 57 recorded crawler runs</div>
             </div>
             <div class="stat-card">
                 <div class="label">Performing Crawlers</div>
@@ -278,11 +278,23 @@
             </div>
             <div class="stat-card">
                 <div class="label">Needs Review</div>
-                <div class="value" style="color: var(--text-muted);">0</div>
+                <div class="value" style="color: var(--warning);">1</div>
                 <div class="subtext">Consecutive zero-yield runs</div>
             </div>
         </div>
 
+        
+            <div class="alert-box">
+                <div class="alert-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <strong>Action Required: Reviewing Non-Performing Crawlers (1)</strong>
+                </div>
+                <div class="alert-content">
+                    <ul>
+                        <li><strong>Amrap:</strong> Yielded 0 new songs across last 4 runs. Consider adjusting filters or eliminating.</li>
+                    </ul>
+                </div>
+            </div>
         
 
         <div class="table-container">
@@ -353,30 +365,30 @@
                 </td>
             </tr>
         
-            <tr class="">
+            <tr class="row-warning">
                 <td>
                     <div class="crawler-name">Amrap</div>
                     <div class="crawler-schedule">Thu 16:00</div>
                 </td>
                 <td>
                     <span class="status-pill status-success">Success</span>
-                    <div class="last-run-date">17/09/2026, 4:00:33 pm</div>
+                    <div class="last-run-date">25/09/2026, 9:23:08 am</div>
                 </td>
                 <td class="metric-num">
                     <span class="stat-highlight">0</span>
-                    <span class="stat-sub">(0 runs)</span>
+                    <span class="stat-sub">(2 runs)</span>
                 </td>
                 <td class="metric-num">
                     <span class="stat-highlight">0</span>
-                    <span class="stat-sub">(0 runs)</span>
+                    <span class="stat-sub">(2 runs)</span>
                 </td>
                 <td class="metric-num">
                     <span class="stat-highlight">2</span>
-                    <span class="stat-sub">(4 runs)</span>
+                    <span class="stat-sub">(6 runs)</span>
                 </td>
                 <td>
-                    <span class="badge badge-neutral">Moderate</span>
-                    <div class="recommendation-text">No new songs this week, but normal for bi-weekly / monthly release patterns.</div>
+                    <span class="badge badge-warning">Needs Review</span>
+                    <div class="recommendation-text">Yielded 0 new songs across last 4 runs. Consider adjusting filters or eliminating.</div>
                 </td>
             </tr>
         
@@ -548,7 +560,7 @@
 
         <div class="footer-bar">
             <div>Cloud Bridge: <span class="badge badge-success">Gist Cloud Sync Active</span> (ID: 9d9f324a...)</div>
-            <div>Generated: 25/09/2026, 9:11:10 am &bull; Host: Mini PC / Desktop Dual-Setup</div>
+            <div>Generated: 25/09/2026, 9:26:21 am &bull; Host: Mini PC / Desktop Dual-Setup</div>
         </div>
     </div>
 </body>
