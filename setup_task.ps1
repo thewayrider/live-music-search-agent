@@ -1,5 +1,12 @@
 $jsonPath = "$PSScriptRoot\configs\schedules.json"
 
+# Self-elevate to Administrator to ensure Register-ScheduledTask doesn't silently fail
+if (-Not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Host "Elevating to Administrator..."
+    Start-Process PowerShell -Verb RunAs "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$PSScriptRoot'; & '$PSCommandPath'`""
+    exit
+}
+
 if (-Not (Test-Path $jsonPath)) {
     Write-Host "Error: schedules.json not found at $jsonPath"
     exit 1
