@@ -35,3 +35,22 @@ Whenever you add or retire a crawler in `live-music-search-agent`:
 3. The next time the crawlers sync to Gist (or when you run a manual sync), your 
 Android app will immediately reflect the new crawlers with zero app rebuilds required.
 
+----
+RUNNING CRAWLERS MANUALLY (OUT-OF-SCHEDULE RUNS)
+
+If a crawler misses a run (e.g. PC was off) or you want to run one immediately:
+
+Method 1 (File Explorer - Easiest):
+1. Navigate to the `live-music-search-agent` folder.
+2. Double-click the specific `.bat` file you want to run (e.g. `run_amrap.bat`, `run_listenbrainz.bat`). 
+3. A terminal window will open and run the crawler, send the email, and update the Gist automatically.
+
+Method 2 (From the Terminal/IDE):
+1. Open a terminal inside the `live-music-search-agent` folder.
+2. Type the name of the batch file and hit Enter. For example:
+   `.\run_futuremag.bat`
+   
+Method 3 (Using Windows Task Scheduler):
+1. Open Windows Task Scheduler (`taskschd.msc`).
+2. Click "Task Scheduler Library".
+3. Right-click the specific "LiveMusicSearchAgent_..." task and select "Run".
