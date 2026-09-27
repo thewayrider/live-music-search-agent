@@ -10,7 +10,8 @@ const AGENTS = [
     { id: 'musicbrainz_indie_discovery', name: 'MusicBrainz', schedule: 'Mon, Wed, Fri 09:30' },
     { id: 'futuremag_indie_discovery', name: 'Futuremag', schedule: 'Fri 09:00' },
     { id: 'roots_mag', name: 'Roots Mag', schedule: 'Fri 09:00' },
-    { id: 'triple_j_unearthed_discovery', name: 'Triple J Unearthed', schedule: 'Mon, Wed, Fri 14:00' }
+    { id: 'triple_j_unearthed_discovery', name: 'Triple J Unearthed', schedule: 'Mon, Wed, Fri 14:00' },
+    { id: 'nialler9_indie_discovery', name: 'Nialler9', schedule: 'Fri 10:00' }
 ];
 
 function parseTimestampFromFilename(filename, stats) {

@@ -4,7 +4,12 @@
     "name": "LiveMusicSearchAgent",
     "description": "Runs the Bandcamp Crawler on Mon/Wed/Fri/Sat at 9AM",
     "script": "run_crawlers.bat",
-    "days": ["Monday", "Wednesday", "Friday", "Saturday"],
+    "days": [
+      "Monday",
+      "Wednesday",
+      "Friday",
+      "Saturday"
+    ],
     "time": "09:00AM"
   },
   {
@@ -12,7 +17,10 @@
     "name": "LiveMusicSearchAgent_ListenBrainz",
     "description": "Runs the ListenBrainz Crawler on Mon/Fri at 9AM",
     "script": "run_listenbrainz.bat",
-    "days": ["Monday", "Friday"],
+    "days": [
+      "Monday",
+      "Friday"
+    ],
     "time": "09:00AM"
   },
   {
@@ -20,7 +28,9 @@
     "name": "LiveMusicSearchAgent_AirCharts",
     "description": "Runs the Air Charts Crawler on Monday at 16:00",
     "script": "run_air_charts.bat",
-    "days": ["Monday"],
+    "days": [
+      "Monday"
+    ],
     "time": "04:00PM"
   },
   {
@@ -28,7 +38,9 @@
     "name": "LiveMusicSearchAgent_Amrap",
     "description": "Runs the AMRAP Crawler on Thursday at 16:00",
     "script": "run_amrap.bat",
-    "days": ["Thursday"],
+    "days": [
+      "Thursday"
+    ],
     "time": "04:00PM"
   },
   {
@@ -36,7 +48,9 @@
     "name": "LiveMusicSearchAgent_AcidStag",
     "description": "Runs the Acid Stag Crawler on Friday at 16:00",
     "script": "run_acid_stag.bat",
-    "days": ["Friday"],
+    "days": [
+      "Friday"
+    ],
     "time": "04:00PM"
   },
   {
@@ -44,7 +58,9 @@
     "name": "Triple J Weekly Reminder",
     "description": "Sends the Triple J Weekly Reminder on Friday at 12:00",
     "script": "run_triplej.bat",
-    "days": ["Friday"],
+    "days": [
+      "Friday"
+    ],
     "time": "12:00PM"
   },
   {
@@ -52,7 +68,11 @@
     "name": "Triple J Unearthed Crawler",
     "description": "Runs the Triple J Unearthed Crawler on Mon, Wed, Fri at 14:00",
     "script": "run_triplej_unearthed.bat",
-    "days": ["Monday", "Wednesday", "Friday"],
+    "days": [
+      "Monday",
+      "Wednesday",
+      "Friday"
+    ],
     "time": "02:00PM"
   },
   {
@@ -60,7 +80,9 @@
     "name": "LiveMusicSearchAgent_Futuremag",
     "description": "Runs the Futuremag Crawler on Friday at 09:00",
     "script": "run_futuremag.bat",
-    "days": ["Friday"],
+    "days": [
+      "Friday"
+    ],
     "time": "09:00AM"
   },
   {
@@ -68,7 +90,9 @@
     "name": "LiveMusicSearchAgent_RootsMag",
     "description": "Runs the Roots Mag Crawler on Friday at 09:00",
     "script": "run_roots_mag.bat",
-    "days": ["Friday"],
+    "days": [
+      "Friday"
+    ],
     "time": "09:00AM"
   },
   {
@@ -76,7 +100,11 @@
     "name": "LiveMusicSearchAgent_MusicBrainz",
     "description": "Runs the MusicBrainz Crawler on Mon, Wed, Fri at 09:30",
     "script": "run_musicbrainz.bat",
-    "days": ["Monday", "Wednesday", "Friday"],
+    "days": [
+      "Monday",
+      "Wednesday",
+      "Friday"
+    ],
     "time": "09:30AM"
   },
   {
@@ -84,7 +112,19 @@
     "name": "LiveMusicSearchAgent_Deezer",
     "description": "Runs the Deezer Crawler on Friday at 11:00",
     "script": "run_deezer.bat",
-    "days": ["Friday"],
+    "days": [
+      "Friday"
+    ],
     "time": "11:00AM"
+  },
+  {
+    "id": "nialler9",
+    "name": "LiveMusicSearchAgent_Nialler9",
+    "description": "Runs the Nialler9 Crawler on Friday at 10:00AM",
+    "script": "run_nialler9.bat",
+    "days": [
+      "Friday"
+    ],
+    "time": "10:00AM"
   }
 ]

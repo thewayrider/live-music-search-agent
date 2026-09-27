@@ -95,6 +95,27 @@ async function main() {
     } else if (config.spotify_oauth) {
         const spotifyResults = await runSpotifyOAuthAgent(config.spotify_oauth, exclusions);
         results = results.concat(spotifyResults);
+    } else {
+        // Dynamic Agent Dispatch for Overseer-scaffolded crawlers
+        for (const [key, val] of Object.entries(config)) {
+            if (key.startsWith('_') || key === 'searchName') continue;
+            const agentFileName = `${key}Agent.js`;
+            const agentFilePath = path.join(__dirname, 'agents', agentFileName);
+            if (fs.existsSync(agentFilePath)) {
+                try {
+                    const mod = require(agentFilePath);
+                    const exportFn = Object.values(mod)[0];
+                    if (typeof exportFn === 'function') {
+                        console.log(`[Dynamic Dispatch] Running ${agentFileName}...`);
+                        const dynResults = await exportFn(val, exclusions);
+                        results = results.concat(dynResults);
+                        break;
+                    }
+                } catch (e) {
+                    console.error(`[Dynamic Dispatch] Error running ${agentFileName}:`, e.message);
+                }
+            }
+        }
     }
 
     // 2. Save Timestamped HTML & JSON in saved_searches
@@ -113,6 +134,7 @@ async function main() {
                        config.triplej?.searchName ||
                        config.deezer?.searchName ||
                        config.spotify_oauth?.searchName ||
+                       Object.values(config).find(v => v && typeof v === 'object' && v.searchName)?.searchName ||
                        'search_results';
     const safeSearchName = searchName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     
