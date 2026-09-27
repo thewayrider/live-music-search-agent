@@ -1,0 +1,24 @@
+Here are all the main built-in slash commands available to you and exactly when you should use them:
+
+### 1. `/learn`
+**When to use it:** When we've just solved a complex problem, corrected a mistake, or established a new workflow (like we did today with Sanity and Vercel) and you want to ensure I never forget it.
+**What it does:** It updates your permanent workspace rules (`AGENTS.md` or `.gemini/config`) so that any future agent you speak with instantly understands your personal preferences, setups, or architectures.
+
+### 2. `/plan`
+**When to use it:** When you are starting a large, complex, or multi-step feature and want to make sure we are on the same page before any code is written. 
+**What it does:** Instead of diving straight into writing code, I will pause and create a detailed, step-by-step architecture and implementation plan for you to review, edit, or approve first.
+
+### 3. `/goal`
+**When to use it:** When you want to hand off a massive, time-consuming task to me and step away from your computer (e.g., "Run this migration overnight" or "Refactor this entire database schema"). 
+**What it does:** It puts me into a highly autonomous, relentless mode. I will work continuously, fixing my own errors and exploring alternatives if I get stuck, and I won't stop until the overarching goal is fully achieved.
+
+### 4. `/grill-me`
+**When to use it:** When you have a vague idea for a feature but aren't quite sure about the design decisions or technical requirements yet. 
+**What it does:** I will act as a technical interviewer, asking you a series of targeted questions to help you clarify your requirements, resolve ambiguities, and lock in a solid design before we start building.
+
+### 5. `/schedule`
+**When to use it:** When you want me to perform an action on a recurring basis or after a specific delay (e.g., "Check the crawler status every hour" or "Remind me in 30 minutes to check the server").
+**What it does:** It sets up a background cron job or timer that will automatically wake me up to execute the task you requested without you needing to be present.
+
+---
+**Tip:** As soon as you type the forward slash (`/`) into the chat box, a menu should pop up showing you these options!

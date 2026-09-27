@@ -38,23 +38,66 @@ async function runFuturemagAgent(config = {}, exclusions = {}) {
   const options = { ...DEFAULTS, ...config };
   const http = fetch;
 
-  const url =
+  const maxAgeDays = options.maxArticleAgeDays || 14;
+  const cutoffTime = Date.now() - (maxAgeDays * 24 * 60 * 60 * 1000);
+
+  // 1. Fetch both the weekly roundup query and recent editorial articles
+  const searchUrl =
     `${options.baseUrl}/wp-json/wp/v2/article` +
     `?search=New+Aussie+Releases&per_page=${options.perPage}&_fields=id,date,link,title,content`;
+  const recentUrl =
+    `${options.baseUrl}/wp-json/wp/v2/article` +
+    `?per_page=${options.perPage}&_fields=id,date,link,title,content`;
 
-  const res = await http(url, {
-    headers: { "User-Agent": options.userAgent, Accept: "application/json" },
-  });
-  
-  if (!res || !res.ok) {
-    throw new Error(`futuremag: WP API request failed (${res && res.status})`);
+  const headers = { "User-Agent": options.userAgent, Accept: "application/json" };
+  const postsMap = new Map();
+
+  try {
+    const resSearch = await http(searchUrl, { headers });
+    if (resSearch && resSearch.ok) {
+      const searchPosts = await resSearch.json();
+      if (Array.isArray(searchPosts)) {
+        searchPosts.forEach(p => postsMap.set(p.id, p));
+      }
+    }
+  } catch (e) {
+    console.warn("[Futuremag Agent] Search query failed:", e.message);
   }
-  
-  const posts = await res.json();
-  if (!Array.isArray(posts)) return [];
+
+  try {
+    const resRecent = await http(recentUrl, { headers });
+    if (resRecent && resRecent.ok) {
+      const recentPosts = await resRecent.json();
+      if (Array.isArray(recentPosts)) {
+        recentPosts.forEach(p => {
+          if (!postsMap.has(p.id)) postsMap.set(p.id, p);
+        });
+      }
+    }
+  } catch (e) {
+    console.warn("[Futuremag Agent] Recent articles query failed:", e.message);
+  }
+
+  const posts = Array.from(postsMap.values());
+  if (posts.length === 0) return [];
 
   const items = [];
   for (const post of posts) {
+    const postTime = new Date(post.date).getTime();
+    if (Number.isFinite(postTime) && postTime < cutoffTime) {
+      // Skip articles older than cutoff window to prevent processing stale roundups
+      continue;
+    }
+
+    const titleText = (post.title && post.title.rendered) || "";
+    const isRoundup = /New Aussie Releases/i.test(titleText);
+    const isReleaseFeature = isRoundup || /album|single|ep\b|track-by-track|debut|releases/i.test(titleText);
+
+    if (!isReleaseFeature) {
+      // Skip tour/interview articles that do not announce or review a release
+      continue;
+    }
+
     const articleDate = (post.date || "").slice(0, 10) || "unknown";
     const articleUrl = post.link || options.baseUrl;
     const html = (post.content && post.content.rendered) || "";
@@ -63,12 +106,10 @@ async function runFuturemagAgent(config = {}, exclusions = {}) {
     $('br, p, div, h1, h2, h3, h4, h5, h6, li, strong, b').append(' ');
     const bodyText = cleanText($.text());
 
-    console.log(`[Futuremag Agent] AI extracting from: ${post.title && post.title.rendered}`);
+    console.log(`[Futuremag Agent] AI extracting from: ${titleText} (${articleDate})`);
     const aiResults = await extractReleasesWithAI(bodyText);
 
     for (const rel of aiResults) {
-      // The AI doesn't give us embeds, so embedUrl will be null unless we fetch it manually
-      // We pass bodyText so buildItem can infer genres
       items.push(buildItem(rel, { articleDate, articleUrl, filters: exclusions, options, bodyText }));
     }
   }
@@ -79,10 +120,12 @@ async function runFuturemagAgent(config = {}, exclusions = {}) {
       if (r.genresMapped && r.genresMapped.length) description += ` | Genres: ${r.genresMapped.join(', ')}`;
       if (r.embedUrl) description += ` | Embed: ${r.embedUrl}`;
 
+      const trackUrl = `${r.sourceUrl}#${slugify(`${r.artist}-${r.title}`)}`;
+
       return {
           title: `${r.artist} - ${r.title}`,
           channel: "Futuremag Music",
-          url: r.sourceUrl,
+          url: trackUrl,
           views: r.bucket,
           uploadedAt: r.articleDate,
           description: description
@@ -159,7 +202,7 @@ function inferGenresMapped(text, filters, options) {
     if (text.includes(keyword)) found.add(label);
   }
 
-  const allowed = new Set(filters.targetGenres || []);
+  const allowed = new Set((filters && filters.targetGenres) || (options && options.targetGenres) || []);
   return Array.from(found).filter((g) => allowed.has(g));
 }
 

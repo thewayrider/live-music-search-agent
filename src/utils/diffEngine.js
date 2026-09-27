@@ -47,8 +47,18 @@ function getNewAdditions(currentResults, previousResults) {
         return currentResults;
     }
 
+    // Tally URLs in previous results to identify unique track URLs vs multi-track collection/chart URLs
+    const urlCounts = new Map();
+    previousResults.forEach(item => {
+        if (item.url) {
+            const cleanUrl = item.url.split('?')[0].replace(/\/$/, "");
+            urlCounts.set(cleanUrl, (urlCounts.get(cleanUrl) || 0) + 1);
+        }
+    });
+
     // Create a Set of previous identifiers
     const previousKeys = new Set();
+    const previousTrackUrls = new Set();
     
     previousResults.forEach(item => {
         // Add exact match
@@ -57,10 +67,12 @@ function getNewAdditions(currentResults, previousResults) {
         // Add slugified match (handles minor formatting changes, invisible characters)
         previousKeys.add(`${item.channel}::${slugify(item.title)}`);
         
-        // Add URL match (handles cases where title changes entirely but URL remains)
+        // Add URL match ONLY if the URL was unique to a single track (not a chart or collection page)
         if (item.url) {
-            const cleanUrl = item.url.split('?')[0].replace(/\/$/, ""); // Strip query params & trailing slash
-            previousKeys.add(cleanUrl);
+            const cleanUrl = item.url.split('?')[0].replace(/\/$/, "");
+            if (urlCounts.get(cleanUrl) === 1 && !cleanUrl.endsWith('/charts')) {
+                previousTrackUrls.add(cleanUrl);
+            }
         }
     });
 
@@ -72,7 +84,7 @@ function getNewAdditions(currentResults, previousResults) {
         
         return !previousKeys.has(exactKey) && 
                !previousKeys.has(slugKey) && 
-               !(cleanUrl && previousKeys.has(cleanUrl));
+               !(cleanUrl && previousTrackUrls.has(cleanUrl));
     });
 }
 

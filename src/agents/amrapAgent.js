@@ -97,7 +97,7 @@ async function runAmrapAgent(config = {}, exclusions = {}) {
       if (!withinWeeks) continue;
       if (options.requireDebut && !isDebut && weeksOnChart > 1) continue;
 
-      const genresMapped = mergeGenres(baseGenres, `${artist} ${title}`, exclusions);
+      const genresMapped = mergeGenres(baseGenres, `${artist} ${title}`, exclusions, options);
       const releaseType = guessReleaseType(track);
       const feat = detectFeat(title);
       const country = options.country;
@@ -151,10 +151,14 @@ async function runAmrapAgent(config = {}, exclusions = {}) {
       if (r.freshnessNote) description += ` | Note: ${r.freshnessNote}`;
       if (r.genresMapped && r.genresMapped.length) description += ` | Genres: ${r.genresMapped.join(', ')}`;
 
+      const trackUrl = r.trackSlug 
+          ? `https://amrap.org.au/charts#${r.trackSlug}` 
+          : (r.trackId ? `https://amrap.org.au/charts#${r.trackId}` : r.sourceUrl);
+
       return {
           title: `${r.artist} - ${r.title}`,
           channel: "AMRAP Charts",
-          url: r.sourceUrl,
+          url: trackUrl,
           views: r.bucket,
           uploadedAt: r.releaseDate,
           description: description
@@ -342,11 +346,13 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Inference + scoring
 // ---------------------------------------------------------------------------
 
-function mergeGenres(baseGenres, text, filters) {
-  const allowed = new Set(filters.targetGenres || []);
+function mergeGenres(baseGenres, text, filters = {}, options = {}) {
+  const targetList = (filters && filters.targetGenres) || (options && options.targetGenres) || [];
+  const mappings = (filters && filters.genreMappings) || (options && options.genreMappings) || {};
+  const allowed = new Set(targetList);
   const found = new Set(baseGenres.filter((g) => allowed.has(g)));
   const lower = String(text).toLowerCase();
-  for (const [label, keywords] of Object.entries(filters.genreMappings || {})) {
+  for (const [label, keywords] of Object.entries(mappings)) {
     if (!allowed.has(label)) continue;
     for (const keyword of keywords) {
       if (lower.includes(String(keyword).toLowerCase())) found.add(label);
