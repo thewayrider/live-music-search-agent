@@ -38,3 +38,14 @@ Every crawler agent in `src/agents/` must resolve to an array of objects matchin
 ## 6. Telemetry & Crawler Diagnostics (Self-Healing)
 - Every run logs to `saved_searches/` and updates `dashboard.html` via `metricsAggregator.js` and syncs to GitHub Gist for the Android monitor app.
 - **Health Watchdog Threshold**: Crawlers yielding 0 new songs across $\ge 4$ consecutive runs (e.g., Amrap, Futuremag) or inactive for $\ge 10$ days are flagged for diagnostic inspection (DOM selector updates, API endpoint changes, or 403 header bypasses).
+
+## 7. Composite Regional Crawlers (Low-Cadence Sources)
+- High-quality tastemakers that publish irregularly or infrequently (~1–3 posts per month, e.g. NZ Musician) should be **bundled into an existing high-volume regional crawler** (e.g. Roots Mag NZ) rather than isolated into their own weekly scheduled task.
+- This creates a unified regional digest (e.g. New Zealand Indie Digest), preserves source attribution per track via `channel: "<Source>"`, and avoids false-positive zero-discovery alerts on the health watchdog.
+
+## 8. Global Deduplication & Multi-Source Consensus (Tastemaker Heat)
+- **Scale & Footprint**: 25,000 unique song records occupy only ~5–8 MB of disk and take <2ms to query in memory or SQLite, making central deduplication extremely lightweight on low-power Mini PCs.
+- **Cross-Agent Consensus**: When a track is discovered independently by multiple distinct crawlers (e.g. Acid Stag, Nialler9, and Triple J), it represents a high-conviction **consensus / heat signal**.
+- **Central Catalog Architecture**: A central data store (via native Node 24 `node:sqlite`) tracks unique songs and logs individual crawler "sightings", providing:
+  1. Global deduplication across all crawlers (preventing duplicate email alerts).
+  2. Multi-source consensus heat scoring to boost high-momentum tracks in the human curation pipeline (*Selection → Spotlight*).

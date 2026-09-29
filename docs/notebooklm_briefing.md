@@ -1,0 +1,79 @@
+# Project Briefing: Music Release & Website Agent
+**Compiled for Google NotebookLM Studio & Research**
+*Generated on:* 2026-09-29 08:27 UTC | *System Status:* 10/10 Crawlers Active
+
+---
+## 1. Executive Summary & Core Motivation
+The **Live Music Search Agent** is an autonomous, local-first music discovery system engineered to identify emerging indie music releases across independent tastemaker websites, community radio charts, and open music databases.
+
+### The Problem with Mainstream Streaming (The Motive)
+- **Spotify API Restrictions (Early 2025)**: Outside access to Spotify's discovery endpoints was restricted and largely decommissioned, cutting off independent developers from programmatic release tracking.
+- **Algorithmic Shift (April 2026)**: Spotify altered its internal recommendation algorithm to prioritize tracks judged 'hot' based on raw listening velocity and mainstream playlist loops, effectively burying underground, self-released, and regional indie artists.
+- **The Antidote**: Bypassing algorithmic walled gardens by directly scraping authentic cultural gatekeepers (regional indie blogs, college radio charts, Bandcamp communities, and curated tastemakers).
+
+## 2. The 4-Stage Human Curation Workflow
+The crawlers do not replace human listening—they feed an organized discovery funnel:
+1. **Discovery**: Autonomous background crawlers scour target sites and normalize new tracks into a unified schema.
+2. **Selection**: Intensive listening and filtering by the curator, guided by multi-source consensus.
+3. **New Release Consideration**: Determining track placement in the weekly release showcase.
+4. **Spotlight Consideration**: Dedicated showcase reserved strictly for brand-new emerging artists.
+
+## 3. Multi-Machine System Architecture
+The project operates across a specialized dual-PC setup to maintain 24/7 reliability without development conflicts:
+- **Desktop PC (Development Hub)**: Primary Windows environment where code, crawlers, and overseer tools are developed, tested in sandboxes, and committed to GitHub (`origin/main`).
+- **Always-On Mini PC (24/7 Execution Host)**: Dedicated host serving Plex Media Server and running scheduled crawlers via Windows Task Scheduler. Pulls code via `git pull origin main`. **Never commits code back to Git directly.**
+- **Cloud Telemetry**: Syncs aggregated crawler statistics via HTTP PATCH to a private GitHub Gist (`9d9f324ab82907243f576f71ca001523`).
+- **Android Monitor Client**: F-Droid compatible Android client reading real-time crawler metrics from the Gist.
+- **Public Portal**: Integrated with Sanity Studio at `streamusique.com`.
+
+## 4. Active Crawler Fleet & Regional Gates
+To prevent volume swamping from global catalogues (e.g. searching Deezer for all rock releases), crawlers are strictly bounded by **[Genre] × [Region]**, maintaining a sweet spot of **5 to 30 tracks per week**:
+
+| Crawler | Region | Schedule | 7-Day Discoveries | All-Time Discoveries | Primary Focus |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Air Charts | Australia | Mon 16:00 | 28 | 75 | 100% Independent Record Labels |
+| Acid Stag | Australia | Fri 16:00 | 19 | 76 | Electronic & Indie Blog |
+| Amrap | Australia | Thu 16:00 | 10 | 12 | Community Radio Airplay Charts |
+| Bandcamp | Global | Mon, Wed, Fri, Sat 09:00 | 15 | 72 | Independent & Self-Released Tags |
+| ListenBrainz | Open DB | Mon, Fri 09:00 | 66 | 255 | Community Playlists & Metadata |
+| MusicBrainz | Open DB | Mon, Wed, Fri 09:30 | 0 | 19 | Community Playlists & Metadata |
+| Futuremag | Australia | Fri 09:00 | 3 | 80 | Emerging Artist Features & Drops |
+| Roots Mag | New Zealand | Fri 09:00 | 20 | 38 | Roots & Indie Weekly Roundup |
+| Triple J Unearthed | Australia | Mon, Wed, Fri 14:00 | 2 | 2 | Emerging & Unsigned Artists |
+| Nialler9 | Ireland | Fri 10:00 | 0 | 0 | Irish Indie Tastemaker & Albums |
+
+**Fleet Summary**: 10 active crawlers | **163** weekly discoveries | **629** all-time songs indexed.
+
+## 5. Composite Regional Crawlers (The NZ Musician Solution)
+A key architectural pattern developed in this project is the **Composite Regional Crawler**:
+- **The Challenge**: Prestigious tastemakers like *NZ Musician* post infrequently (~1–3 times per month). Running an isolated weekly crawler leads to 3 out of 4 zero-yield runs, triggering watchdog false alarms.
+- **The Solution**: Bundling low-cadence feeds directly into a high-volume regional sibling (*Roots Mag NZ*). Roots Mag delivers steady weekly baseline volume (~20 tracks), while NZ Musician contributes curated artist spotlight features when available.
+- Each track preserves its unique source attribution (`channel: "Roots Mag"` vs `channel: "NZ Musician"`).
+
+## 6. Multi-Source Consensus Signals (Tastemaker Heat)
+When multiple independent crawlers identify the same song in the same time window, it serves as a high-conviction **Tastemaker Consensus Signal** for the human curator:
+
+| Artist & Track | Sightings Count | Discovered By Sources |
+| :--- | :--- | :--- |
+| **Polaris - Without You** | 4 sources | Independent Label Singles, Futuremag Music, ListenBrainz API, New Music Friday AU & NZ |
+| **M83 - Blister Sunrise** | 3 sources | Acid Stag, All New Indie, New Music Friday AU & NZ |
+| **Robert Baxter - PARTYANIMAL** | 3 sources | Acid Stag, 100% Independent Albums, ListenBrainz API |
+| **Peking Duk - Paradise** | 3 sources | Acid Stag, Futuremag Music, ListenBrainz API |
+| **Darren Middleton - Pathways** | 3 sources | 100% Independent Albums, Bandcamp Discover, ListenBrainz API |
+| **Natalie Imbruglia - Algorithm** | 3 sources | 100% Independent Albums, Independent Label Albums, ListenBrainz API |
+| **Holly Throsby - Normal Magic** | 3 sources | 100% Independent Albums, Independent Label Albums, Futuremag Music |
+| **The Tullamarines - Flight Path** | 3 sources | 100% Independent Singles, Futuremag Music, Triple J |
+| **Don Walker - Love Songs** | 3 sources | 100% Independent Albums, Independent Label Albums, Futuremag Music |
+| **Noah Hill - Heaven** | 3 sources | Deezer: New Alternative, All New Indie, New Music Friday AU & NZ |
+| **GANG OF YOUTHS - THINGS TAKE TIME** | 3 sources | Futuremag Music, ListenBrainz API, All New Indie |
+| **TROYE SIVAN - SHE’S THE BEST** | 3 sources | Futuremag Music, ListenBrainz API, Triple J |
+
+*Data Insight*: Out of 1131 total logged discoveries, **76 tracks** achieved multi-source consensus.
+
+## 7. The Antigravity Overseer Subsystem
+The Overseer coordinates autonomous agent operations, self-healing diagnostics, and onboarding:
+- **Auditor (`auditor.js`)**: Continuously monitors crawler performance, detecting selector breakages or API changes before they impact production.
+- **Scout (`scout.js`)**: Researches new regional indie gatekeepers, probing live RSS accessibility and update frequency.
+- **Scaffolder (`scaffolder.js`)**: Auto-generates compliant crawler modules, configuration JSON, and batch runner scripts.
+- **Verifier (`verifier.js`)**: Executes dry-run sandbox validations ensuring 100% adherence to the Unified Output Contract:
+  `{ title, channel, url, views, uploadedAt, description }`.

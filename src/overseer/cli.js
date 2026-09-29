@@ -4,6 +4,7 @@ const { auditHealth, formatAuditReport } = require('./auditor');
 const { scoutSources } = require('./scout');
 const { scaffoldCrawler } = require('./scaffolder');
 const { testAgentModule } = require('./verifier');
+const { generateNotebookBriefing } = require('./briefingExporter');
 const path = require('path');
 const fs = require('fs');
 
@@ -14,6 +15,16 @@ async function main() {
     if (command === 'health' || command === 'audit') {
         const report = auditHealth();
         console.log(formatAuditReport(report));
+        return;
+    }
+
+    if (command === 'export-briefing' || command === 'briefing') {
+        console.log("\n[Overseer Exporter] Compiling project briefing packet for Google NotebookLM...");
+        const result = generateNotebookBriefing();
+        console.log(`[+] Briefing generated successfully!`);
+        console.log(`    File Path:  ${result.outputPath}`);
+        console.log(`    Summary:    ${result.totalCrawlers} Crawlers | ${result.totalSongs} Historic Records | ${result.consensusCount} Consensus Tracks`);
+        console.log(`\nNext Step: Open Google NotebookLM (https://notebooklm.google.com), open your 'Music Release & Website Agent' notebook, and upload docs/notebooklm_briefing.md as a source to unlock Mind Maps, Slide Decks, and Audio Overviews.\n`);
         return;
     }
 
@@ -148,6 +159,11 @@ Usage:
   node src/overseer/cli.js test <agentId>
       Executes sandbox dry-run verification on an agent against
       the Unified Contract schema.
+
+  node src/overseer/cli.js export-briefing
+      Compiles system architecture, crawler registry, telemetry,
+      and consensus discoveries into docs/notebooklm_briefing.md
+      for Google NotebookLM Studio.
 ============================================================
 `);
 }

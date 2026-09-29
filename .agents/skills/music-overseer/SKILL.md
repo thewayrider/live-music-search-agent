@@ -45,6 +45,14 @@ node src/overseer/cli.js test <agentId>
 ```
 - Confirms array output, non-empty `title`, `url`, `channel`, and valid track yield.
 
-### 5. Multi-Machine Deployment (Dual-PC)
+### 5. NotebookLM Briefing Exporter
+Compile the complete system architecture, active fleet registry, telemetry, and consensus discoveries into a briefing document for Google NotebookLM:
+```powershell
+node src/overseer/cli.js export-briefing
+```
+- Outputs to `docs/notebooklm_briefing.md`.
+- Upload as a source in NotebookLM to unlock Mind Maps, Slide Decks, and Audio Overviews.
+
+### 6. Multi-Machine Deployment (Dual-PC)
 - **Desktop PC**: Authors, scaffolds, and tests in Antigravity / Antigravity IDE. Commits and pushes to GitHub `origin/main`.
 - **Always-On Mini PC**: Pulls updates via `git pull origin main` and executes `setup_task.ps1`. Never commits code back to Git directly.

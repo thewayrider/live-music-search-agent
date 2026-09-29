@@ -48,39 +48,25 @@ async function main() {
     if (config.airChart) {
         const airChartResults = await runAirChartAgent(config.airChart, exclusions);
         results = results.concat(airChartResults);
-    }
-    
-    if (config.acidStag) {
+    } else if (config.acidStag) {
         const acidStagResults = await runAcidStagAgent(config.acidStag, exclusions);
         results = results.concat(acidStagResults);
-    }
-    
-    if (config.amrap) {
+    } else if (config.amrap) {
         const amrapResults = await runAmrapAgent(config.amrap, exclusions);
         results = results.concat(amrapResults);
-    }
-    
-    if (config.bandcamp) {
+    } else if (config.bandcamp) {
         const bandcampResults = await runBandcampAgent(config.bandcamp, exclusions);
         results = results.concat(bandcampResults);
-    }
-    
-    if (config.futuremag) {
+    } else if (config.futuremag) {
         const futuremagResults = await runFuturemagAgent(config.futuremag, exclusions);
         results = results.concat(futuremagResults);
-    }
-    
-    if (config.listenbrainz) {
+    } else if (config.listenbrainz) {
         const listenbrainzResults = await runListenBrainzAgent(config.listenbrainz, exclusions);
         results = results.concat(listenbrainzResults);
-    }
-    
-    if (config.musicbrainz) {
+    } else if (config.musicbrainz) {
         const musicbrainzResults = await runMusicBrainzAgent(config.musicbrainz, exclusions);
         results = results.concat(musicbrainzResults);
-    }
-    
-    if (config.rootsmag) {
+    } else if (config.rootsmag) {
         const rootsmagResults = await runRootsMagAgent(config.rootsmag, exclusions);
         results = results.concat(rootsmagResults);
     } else if (configPath.includes('triplej_unearthed')) {
