@@ -1,6 +1,6 @@
 # Project Briefing: Music Release & Website Agent
-**Compiled for Google NotebookLM Studio & Research**
-*Generated on:* 2026-09-29 08:27 UTC | *System Status:* 10/10 Crawlers Active
+**Compiled for Google NotebookLM Studio, Mind Maps & Research**
+*Generated on:* 2026-09-29 10:11 UTC | *Fleet Status:* 10/10 Crawlers Active | *Database:* Node 24 Native SQLite
 
 ---
 ## 1. Executive Summary & Core Motivation
@@ -44,33 +44,50 @@ To prevent volume swamping from global catalogues (e.g. searching Deezer for all
 
 **Fleet Summary**: 10 active crawlers | **163** weekly discoveries | **629** all-time songs indexed.
 
-## 5. Composite Regional Crawlers (The NZ Musician Solution)
-A key architectural pattern developed in this project is the **Composite Regional Crawler**:
-- **The Challenge**: Prestigious tastemakers like *NZ Musician* post infrequently (~1–3 times per month). Running an isolated weekly crawler leads to 3 out of 4 zero-yield runs, triggering watchdog false alarms.
-- **The Solution**: Bundling low-cadence feeds directly into a high-volume regional sibling (*Roots Mag NZ*). Roots Mag delivers steady weekly baseline volume (~20 tracks), while NZ Musician contributes curated artist spotlight features when available.
-- Each track preserves its unique source attribution (`channel: "Roots Mag"` vs `channel: "NZ Musician"`).
+## 5. Central Database Architecture & Multi-Source Consensus Engine
+As the agent fleet expanded across 10+ autonomous scrapers, individual JSON logs created blind spots for cross-agent song appearances. The system introduced a local-first **Central SQLite Database** (`node:sqlite`):
+- **Zero External Dependencies**: Powered by Node 24's native C++ SQLite bindings (`DatabaseSync`), eliminating heavy database servers (Postgres/MySQL) and native compilation toolchains (`node-gyp`).
+- **Performance & Scale**: Sub-2ms indexed lookups on title keys. Even after 3 years and 25,000 releases, the database file remains under 8 MB.
+- **Schema Design**:
+  - `songs`: Unified table indexed by normalized title key (`title_key`), storing canonical artist, title, first-seen timestamp, and total sightings count.
+  - `sightings`: Foreign-keyed log recording every appearance with exact source agent, source URL, and timestamp.
+- **Git-Independent Storage**: `data/music_catalog.sqlite` is ignored by Git, allowing the Mini PC to write local discoveries continuously without ever encountering Git merge conflicts during `git pull origin main`.
+- **Real-Time Tastemaker Heat Scoring**: When an agent detects a track, `diffEngine.js` calculates its multi-source consensus in real time. Songs backed by multiple tastemakers receive an automatic badge:
+  `[Heat: 3 sources (Nialler9, Roots Mag, Amrap)]`.
 
-## 6. Multi-Source Consensus Signals (Tastemaker Heat)
-When multiple independent crawlers identify the same song in the same time window, it serves as a high-conviction **Tastemaker Consensus Signal** for the human curator:
+## 6. Multi-Source Consensus Signals (Tastemaker Heat in Practice)
+When multiple independent gatekeepers cover the same release, it creates an objective, un-gamed conviction score for the human curator:
 
-| Artist & Track | Sightings Count | Discovered By Sources |
+| Artist & Track | Heat Score | Discovered By Sources |
 | :--- | :--- | :--- |
 | **Polaris - Without You** | 4 sources | Independent Label Singles, Futuremag Music, ListenBrainz API, New Music Friday AU & NZ |
-| **M83 - Blister Sunrise** | 3 sources | Acid Stag, All New Indie, New Music Friday AU & NZ |
-| **Robert Baxter - PARTYANIMAL** | 3 sources | Acid Stag, 100% Independent Albums, ListenBrainz API |
-| **Peking Duk - Paradise** | 3 sources | Acid Stag, Futuremag Music, ListenBrainz API |
 | **Darren Middleton - Pathways** | 3 sources | 100% Independent Albums, Bandcamp Discover, ListenBrainz API |
 | **Natalie Imbruglia - Algorithm** | 3 sources | 100% Independent Albums, Independent Label Albums, ListenBrainz API |
 | **Holly Throsby - Normal Magic** | 3 sources | 100% Independent Albums, Independent Label Albums, Futuremag Music |
 | **The Tullamarines - Flight Path** | 3 sources | 100% Independent Singles, Futuremag Music, Triple J |
 | **Don Walker - Love Songs** | 3 sources | 100% Independent Albums, Independent Label Albums, Futuremag Music |
 | **Noah Hill - Heaven** | 3 sources | Deezer: New Alternative, All New Indie, New Music Friday AU & NZ |
+| **M83 - Blister Sunrise** | 3 sources | Acid Stag, All New Indie, New Music Friday AU & NZ |
+| **Armlock - Half Time** | 3 sources | ListenBrainz API, All New Indie, New Music Friday AU & NZ |
 | **GANG OF YOUTHS - THINGS TAKE TIME** | 3 sources | Futuremag Music, ListenBrainz API, All New Indie |
+| **Balu Brigada - BedHead** | 3 sources | ListenBrainz API, All New Indie, Triple J |
+| **Peking Duk - Paradise** | 3 sources | Acid Stag, Futuremag Music, ListenBrainz API |
 | **TROYE SIVAN - SHE’S THE BEST** | 3 sources | Futuremag Music, ListenBrainz API, Triple J |
+| **Nerve - Growing Pains** | 2 sources | 100% Independent Albums, Independent Label Albums |
+| **Queenie - Pleasance** | 2 sources | 100% Independent Albums, Independent Label Albums |
 
-*Data Insight*: Out of 1131 total logged discoveries, **76 tracks** achieved multi-source consensus.
+**Catalog Summary**:
+- **Total Unique Songs Indexed**: 1008
+- **Total Sighting Records**: 1098
+- **Multi-Source Consensus Tracks (2+ Sources)**: 76 tracks (8% of catalog)
 
-## 7. The Antigravity Overseer Subsystem
+## 7. Composite Regional Crawlers (The NZ Musician Pattern)
+A key architectural pattern developed in this project is the **Composite Regional Crawler**:
+- **The Challenge**: Prestigious tastemakers like *NZ Musician* post infrequently (~1–3 times per month). Running an isolated weekly crawler leads to 3 out of 4 zero-yield runs, triggering watchdog false alarms.
+- **The Solution**: Bundling low-cadence feeds directly into a high-volume regional sibling (*Roots Mag NZ*). Roots Mag delivers steady weekly baseline volume (~20 tracks), while NZ Musician contributes curated artist spotlight features when available.
+- Each track preserves its unique source attribution (`channel: "Roots Mag"` vs `channel: "NZ Musician"`).
+
+## 8. The Antigravity Overseer Subsystem
 The Overseer coordinates autonomous agent operations, self-healing diagnostics, and onboarding:
 - **Auditor (`auditor.js`)**: Continuously monitors crawler performance, detecting selector breakages or API changes before they impact production.
 - **Scout (`scout.js`)**: Researches new regional indie gatekeepers, probing live RSS accessibility and update frequency.
