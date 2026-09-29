@@ -1,0 +1,9 @@
+Dashboard Generator cmd:
+
+npm run dashboard
+
+----
+
+Link to NotebookLM cmd:
+
+node src/overseer/cli.js export-briefing
