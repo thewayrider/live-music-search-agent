@@ -68,7 +68,7 @@ async function main() {
         console.log(`[+] Briefing generated successfully!`);
         console.log(`    File Path:  ${result.outputPath}`);
         console.log(`    Summary:    ${result.totalCrawlers} Crawlers | ${result.totalSongs} Historic Records | ${result.consensusCount} Consensus Tracks`);
-        console.log(`\nNext Step: Open Google NotebookLM (https://notebooklm.google.com), open your 'Music Release & Website Agent' notebook, and upload docs/notebooklm_briefing.md as a source to unlock Mind Maps, Slide Decks, and Audio Overviews.\n`);
+        console.log(`\nNext Step: Open Google NotebookLM (https://notebooklm.google.com), open your 'Music Release & Website Agent' notebook, and upload docs/${result.datedFileName || 'notebooklm_briefing.md'} as a source to unlock Mind Maps, Slide Decks, and Audio Overviews.\n`);
         return;
     }
 

@@ -22,15 +22,16 @@ function generateNotebookBriefing() {
     const dbStats = getCatalogStats();
     const consensusTracks = getTopConsensusTracks(25);
 
+    const dateSlug = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
     const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 16);
 
     const lines = [];
 
-    // Header
-    lines.push(`# Project Briefing: Music Release & Website Agent`);
-    lines.push(`**Compiled for Google NotebookLM Studio, Mind Maps & Research**`);
-    lines.push(`*Generated on:* ${nowStr} UTC | *Fleet Status:* 10/10 Crawlers Active | *Database:* Node 24 Native SQLite\n`);
-    lines.push(`---`);
+    // Header with distinct date in the title (displayed in NotebookLM's source list)
+    lines.push(`# Project Briefing: Music Release Agent [${dateSlug}]`);
+    lines.push(`> [!NOTE]`);
+    lines.push(`> **Version Date:** ${nowStr} UTC | **Fleet Status:** 10/10 Active | **Catalog:** ${dbStats.totalUniqueSongs || 0} songs / ${dbStats.consensusSongsCount || 0} consensus\n`);
+    lines.push(`---\n`);
 
     // Executive Summary
     lines.push(`## 1. Executive Summary & Core Motivation`);
@@ -137,11 +138,16 @@ function generateNotebookBriefing() {
     lines.push(`  \`{ title, channel, url, views, uploadedAt, description }\`.\n`);
 
     const finalContent = lines.join('\n');
-    const outputPath = path.join(docsDir, 'notebooklm_briefing.md');
-    fs.writeFileSync(outputPath, finalContent, 'utf8');
+    const datedFileName = `briefing_${dateSlug}.md`;
+    const datedOutputPath = path.join(docsDir, datedFileName);
+    const latestOutputPath = path.join(docsDir, 'notebooklm_briefing.md');
+
+    fs.writeFileSync(datedOutputPath, finalContent, 'utf8');
+    fs.writeFileSync(latestOutputPath, finalContent, 'utf8');
 
     return {
-        outputPath,
+        outputPath: datedOutputPath,
+        datedFileName,
         totalCrawlers: crawlers.length,
         totalSongs: totalSightings,
         consensusCount: consensusCount
