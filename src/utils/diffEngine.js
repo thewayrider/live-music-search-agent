@@ -1,9 +1,10 @@
 const fs = require('fs');
 const path = require('path');
+const { processSongEntry, getCatalogStats, slugify } = require('./catalogDb');
 
 /**
  * Reads all previous JSON files (including base and subsequent runs) 
- * to compile a full list of all previously seen songs.
+ * for a specific crawler directory.
  */
 function getPreviousReport(savedSearchesDir, currentFilename) {
     if (!fs.existsSync(savedSearchesDir)) return [];
@@ -28,23 +29,13 @@ function getPreviousReport(savedSearchesDir, currentFilename) {
     return allSeenSongs;
 }
 
-function slugify(value) {
-    return String(value || "")
-        .toLowerCase()
-        .normalize("NFKD")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 80);
-}
-
 /**
- * Compares current results with previous results and returns only items that are new.
- * We uniquely identify a song by its 'title' and 'channel' (category), as well as its URL.
+ * Compares current results with previous reports and the central SQLite database.
+ * Deduplicates across crawlers while tracking multi-source consensus Heat Scores.
  */
-function getNewAdditions(currentResults, previousResults) {
-    if (!previousResults || previousResults.length === 0) {
-        // If there's no previous run, everything is considered "new"
-        return currentResults;
+function getNewAdditions(currentResults, previousResults = []) {
+    if (!Array.isArray(currentResults) || currentResults.length === 0) {
+        return [];
     }
 
     // Tally URLs in previous results to identify unique track URLs vs multi-track collection/chart URLs
@@ -56,18 +47,13 @@ function getNewAdditions(currentResults, previousResults) {
         }
     });
 
-    // Create a Set of previous identifiers
     const previousKeys = new Set();
     const previousTrackUrls = new Set();
     
     previousResults.forEach(item => {
-        // Add exact match
         previousKeys.add(`${item.channel}::${item.title}`);
-        
-        // Add slugified match (handles minor formatting changes, invisible characters)
         previousKeys.add(`${item.channel}::${slugify(item.title)}`);
         
-        // Add URL match ONLY if the URL was unique to a single track (not a chart or collection page)
         if (item.url) {
             const cleanUrl = item.url.split('?')[0].replace(/\/$/, "");
             if (urlCounts.get(cleanUrl) === 1 && !cleanUrl.endsWith('/charts')) {
@@ -76,19 +62,65 @@ function getNewAdditions(currentResults, previousResults) {
         }
     });
 
-    // Filter current results to find those not in the previous set
-    return currentResults.filter(item => {
+    const newAdditions = [];
+    let consensusUpdates = 0;
+
+    for (const item of currentResults) {
+        if (!item || !item.title) continue;
+
+        // 1. Check local crawler run duplicates
         const exactKey = `${item.channel}::${item.title}`;
         const slugKey = `${item.channel}::${slugify(item.title)}`;
         const cleanUrl = item.url ? item.url.split('?')[0].replace(/\/$/, "") : '';
-        
-        return !previousKeys.has(exactKey) && 
-               !previousKeys.has(slugKey) && 
-               !(cleanUrl && previousTrackUrls.has(cleanUrl));
-    });
+
+        const isLocalDuplicate = previousKeys.has(exactKey) ||
+                                previousKeys.has(slugKey) ||
+                                (cleanUrl && previousTrackUrls.has(cleanUrl));
+
+        // 2. Process against Central SQLite Database
+        let dbOutcome = null;
+        try {
+            dbOutcome = processSongEntry(item, item.channel);
+        } catch (dbErr) {
+            // Graceful fallback if SQLite is temporarily locked
+            console.warn(`[Diff Engine] Catalog DB warning:`, dbErr.message);
+        }
+
+        if (dbOutcome) {
+            // Attach live consensus heat score to item description
+            if (dbOutcome.heatScore > 1) {
+                const heatTag = `[Heat: ${dbOutcome.heatScore} sources]`;
+                if (!item.description.includes('[Heat:')) {
+                    item.description = `${heatTag} ${item.description}`;
+                }
+            }
+
+            if (!isLocalDuplicate && dbOutcome.isNewGlobal) {
+                // Brand-new global discovery
+                newAdditions.push(item);
+            } else if (!isLocalDuplicate && dbOutcome.isNewSighting) {
+                // Sighted by a new tastemaker source (Cross-crawler consensus)
+                consensusUpdates++;
+                console.log(`[Tastemaker Heat] "${item.title}" gained multi-source consensus! (Heat: ${dbOutcome.heatScore} sources: ${dbOutcome.sources.join(', ')})`);
+                newAdditions.push(item);
+            }
+        } else {
+            // Fallback to local-only deduplication
+            if (!isLocalDuplicate) {
+                newAdditions.push(item);
+            }
+        }
+    }
+
+    if (consensusUpdates > 0) {
+        console.log(`[Diff Engine] ${consensusUpdates} track(s) achieved cross-agent tastemaker consensus.`);
+    }
+
+    return newAdditions;
 }
 
 module.exports = {
     getPreviousReport,
-    getNewAdditions
+    getNewAdditions,
+    slugify
 };

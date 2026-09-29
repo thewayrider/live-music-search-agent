@@ -5,6 +5,7 @@ const { scoutSources } = require('./scout');
 const { scaffoldCrawler } = require('./scaffolder');
 const { testAgentModule } = require('./verifier');
 const { generateNotebookBriefing } = require('./briefingExporter');
+const { getCatalogStats, getTopConsensusTracks, backfillFromHistory } = require('../utils/catalogDb');
 const path = require('path');
 const fs = require('fs');
 
@@ -15,6 +16,49 @@ async function main() {
     if (command === 'health' || command === 'audit') {
         const report = auditHealth();
         console.log(formatAuditReport(report));
+        return;
+    }
+
+    if (command === 'catalog' || command === 'db') {
+        const stats = getCatalogStats();
+        console.log("\n============================================================");
+        console.log("             CENTRAL MUSIC CATALOG DATABASE                 ");
+        console.log("============================================================");
+        console.log(`Database File:        ${stats.databasePath}`);
+        console.log(`Total Unique Songs:   ${stats.totalUniqueSongs}`);
+        console.log(`Total Sightings:      ${stats.totalSightings}`);
+        console.log(`Consensus Songs (2+): ${stats.consensusSongsCount}`);
+        console.log("============================================================\n");
+        return;
+    }
+
+    if (command === 'heat' || command === 'consensus') {
+        const limit = args[1] ? parseInt(args[1], 10) : 15;
+        const tracks = getTopConsensusTracks(limit);
+        console.log("\n============================================================");
+        console.log(`       TASTEMAKER CONSENSUS HEAT (TOP ${tracks.length} BREAKOUTS)        `);
+        console.log("============================================================");
+        if (tracks.length === 0) {
+            console.log("No multi-source consensus tracks found yet.");
+        } else {
+            tracks.forEach((t, idx) => {
+                const sources = t.sightings.map(s => s.source_name).join(', ');
+                console.log(`${String(idx + 1).padStart(2)}. [Heat: ${t.heat_score} sources] ${t.artist} - ${t.title}`);
+                console.log(`    First Seen: ${t.first_seen_at} on ${t.first_source}`);
+                console.log(`    Sighted By: ${sources}\n`);
+            });
+        }
+        console.log("============================================================\n");
+        return;
+    }
+
+    if (command === 'backfill') {
+        console.log("\n[Overseer Database] Backfilling SQLite catalog from saved_searches history...");
+        const res = backfillFromHistory(path.resolve(__dirname, '../../saved_searches'));
+        console.log(`[+] Backfill complete!`);
+        console.log(`    Processed Sightings: ${res.processed}`);
+        console.log(`    Total Unique Songs:  ${res.stats.totalUniqueSongs}`);
+        console.log(`    Consensus Tracks:    ${res.stats.consensusSongsCount}\n`);
         return;
     }
 
