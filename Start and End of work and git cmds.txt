@@ -54,3 +54,7 @@ Method 3 (Using Windows Task Scheduler):
 1. Open Windows Task Scheduler (`taskschd.msc`).
 2. Click "Task Scheduler Library".
 3. Right-click the specific "LiveMusicSearchAgent_..." task and select "Run".
+
+Link to NotebookLM cmd:
+
+node src/overseer/cli.js export-briefing
