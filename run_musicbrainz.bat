@@ -8,4 +8,3 @@ node src/index.js configs/musicbrainz_indie.json
 echo ========================================================
 echo MusicBrainz crawler finished!
 echo ========================================================
-pause
