@@ -44,16 +44,6 @@
     "time": "04:00PM"
   },
   {
-    "id": "acidstag",
-    "name": "LiveMusicSearchAgent_AcidStag",
-    "description": "Runs the Acid Stag Crawler on Friday at 16:00",
-    "script": "run_acid_stag.bat",
-    "days": [
-      "Friday"
-    ],
-    "time": "04:00PM"
-  },
-  {
     "id": "triplej",
     "name": "Triple J Weekly Reminder",
     "description": "Sends the Triple J Weekly Reminder on Friday at 12:00",

@@ -3,7 +3,6 @@ const path = require('path');
 
 const AGENTS = [
     { id: 'air_charts_discovery', name: 'Air Charts', schedule: 'Mon 16:00' },
-    { id: 'acid_stag_discovery', name: 'Acid Stag', schedule: 'Fri 16:00' },
     { id: 'amrap_indie_discovery', name: 'Amrap', schedule: 'Thu 16:00' },
     { id: 'bandcamp_indie_discovery', name: 'Bandcamp', schedule: 'Mon, Wed, Fri, Sat 09:00' },
     { id: 'listenbrainz_indie_discovery', name: 'ListenBrainz', schedule: 'Mon, Fri 09:00' },
