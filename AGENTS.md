@@ -4,7 +4,8 @@
 - **Desktop PC**: Primary development environment (Windows). Not always on.
 - **Always-On Mini PC**: Dedicated 24/7 host serving Plex Media Server in Tailscale exit node mode. Runs scheduled crawlers via Windows Task Scheduler (`setup_task.ps1` / `run_*.bat`).
 - **Git Sync Rule**: Code changes must always be developed/tested on Desktop, committed and pushed to GitHub `origin/main`, then pulled on the Mini PC (`git pull`).
-- **Conflict Prevention**: Automated background jobs on the Mini PC must NEVER commit or push directly to the Git repository.
+- **End of Session Commits**: Whenever finishing work on the Desktop PC, all agents MUST use the following workflow to commit and push: `git add .`, `git commit -m "Update site changes"`, and `git push origin main`. (Do not use descriptive commit messages; strictly use "Update site changes").
+- **Conflict Prevention**: Automated background jobs on the Mini PC must NEVER commit or push directly to the Git repository. If pull conflicts occur, use `git fetch origin` and `git reset --hard origin/main`.
 
 ## Telemetry & Cloud Synchronization (GitHub Gist)
 - **Gist ID**: `9d9f324ab82907243f576f71ca001523`
