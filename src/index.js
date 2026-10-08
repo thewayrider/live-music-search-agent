@@ -98,6 +98,11 @@ async function main() {
         if (agent?.runSpotifyOAuthAgent) {
             results = results.concat(await agent.runSpotifyOAuthAgent(config.spotify_oauth, exclusions));
         }
+    } else if (config.nialler9) {
+        const agent = loadAgentSafely('nialler9', './agents/nialler9Agent');
+        if (agent?.runNialler9Agent) {
+            results = results.concat(await agent.runNialler9Agent(config.nialler9, exclusions));
+        }
     } else {
         // Dynamic Agent Dispatch for Overseer-scaffolded crawlers
         for (const [key, val] of Object.entries(config)) {
