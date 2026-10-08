@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "run_crawlers.bat",
     "dashboard": "node src/utils/dashboardGenerator.js && start dashboard.html"
   },
   "keywords": [],
