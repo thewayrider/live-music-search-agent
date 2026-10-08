@@ -175,7 +175,7 @@ async function main() {
     
     console.log(`[Diff Engine] Found ${newSongs.length} totally new songs since the last run.`);
 
-    songsToSave = isBaseRun ? results : newSongs;
+    songsToSave = newSongs;
 
     // Email Notifier: Send email with results of the run
     await sendEmailNotification(newSongs, baseHtmlPath, searchName);

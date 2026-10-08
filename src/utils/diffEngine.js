@@ -1,6 +1,17 @@
 const fs = require('fs');
 const path = require('path');
-const { processSongEntry, getCatalogStats, slugify } = require('./catalogDb');
+const { processSongEntry, getCatalogStats } = require('./catalogDb');
+const { parseArtistTitle, isCleanTrack, slugify } = require('./normalizer');
+
+const EXCLUSIONS_FILE = path.join(__dirname, '../exclusions.json');
+let cachedExclusions = { keywords: [] };
+try {
+    if (fs.existsSync(EXCLUSIONS_FILE)) {
+        cachedExclusions = JSON.parse(fs.readFileSync(EXCLUSIONS_FILE, 'utf8'));
+    }
+} catch (e) {
+    // fallback
+}
 
 /**
  * Reads all previous JSON files (including base and subsequent runs) 
@@ -72,9 +83,26 @@ function getNewAdditions(currentResults, previousResults = []) {
     const newAdditions = [];
     const seenInCurrentRun = new Set();
     let consensusSightingsCount = 0;
+    let droppedJunkCount = 0;
 
     for (const item of currentResults) {
         if (!item || !item.title) continue;
+
+        // 1. EveryNoise Purity Gate: Parse and Validate (Artist - Title)
+        const parsed = parseArtistTitle(item.title);
+        const artist = item.artist || parsed.artist;
+        const title = item.songTitle || parsed.title;
+
+        // Enforce EveryNoise pure track validation
+        if (!isCleanTrack(artist, title, cachedExclusions.keywords || [])) {
+            droppedJunkCount++;
+            continue;
+        }
+
+        // Standardize clean title on the item
+        item.title = `${artist} - ${title}`;
+        item.artist = artist;
+        item.songTitle = title;
 
         const titleSlug = slugify(item.title);
         const exactTitle = item.title.trim().toLowerCase();
@@ -126,6 +154,10 @@ function getNewAdditions(currentResults, previousResults = []) {
                 newAdditions.push(item);
             }
         }
+    }
+
+    if (droppedJunkCount > 0) {
+        console.log(`[EveryNoise Purity Gate] Filtered out ${droppedJunkCount} unclean/bedroom/unresolved/foreign entries.`);
     }
 
     if (consensusSightingsCount > 0) {

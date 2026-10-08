@@ -7,34 +7,7 @@ const DB_PATH = path.join(DATA_DIR, 'music_catalog.sqlite');
 
 let _dbInstance = null;
 
-function slugify(s) {
-    return String(s || "")
-        .toLowerCase()
-        .normalize("NFKD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 100);
-}
-
-function normalizeKey(artist, title) {
-    const cleanArtist = slugify(artist);
-    const cleanTitle = slugify(title);
-    return `${cleanArtist}::${cleanTitle}`;
-}
-
-function parseArtistTitle(rawTitle) {
-    if (!rawTitle) return { artist: "Unknown Artist", title: "Unknown Track" };
-    if (rawTitle.includes(" – ")) {
-        const parts = rawTitle.split(" – ").map(s => s.trim());
-        return { artist: parts[0], title: parts.slice(1).join(" – ") };
-    }
-    if (rawTitle.includes(" - ")) {
-        const parts = rawTitle.split(" - ").map(s => s.trim());
-        return { artist: parts[0], title: parts.slice(1).join(" - ") };
-    }
-    return { artist: "Unknown Artist", title: rawTitle.trim() };
-}
+const { slugify, normalizeKey, parseArtistTitle } = require('./normalizer');
 
 /**
  * Returns a singleton instance of the SQLite database.
