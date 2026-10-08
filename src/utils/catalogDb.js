@@ -1,27 +1,57 @@
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-
-const DATA_DIR = path.resolve(__dirname, '../../data');
-const DB_PATH = path.join(DATA_DIR, 'music_catalog.sqlite');
-
-let _dbInstance = null;
-
 const { slugify, normalizeKey, parseArtistTitle } = require('./normalizer');
 
 /**
- * Returns a singleton instance of the SQLite database.
+ * Resolves the path to the Unified Master SQLite database.
+ * Supports Desktop PC, Mini PC, environment variable overrides, and local fallback.
+ */
+function resolveMasterDbPath() {
+    if (process.env.MASTER_DB_PATH && fs.existsSync(process.env.MASTER_DB_PATH)) {
+        return process.env.MASTER_DB_PATH;
+    }
+
+    const candidates = [
+        // Desktop PC path to new-indie-live-twentyfour master catalog
+        path.resolve(__dirname, '../../../../new-indie-live-twentyfour/data/master_catalog.sqlite'),
+        path.resolve(__dirname, '../../../new-indie-live-twentyfour/data/master_catalog.sqlite'),
+        // Mini PC path
+        'C:/Antigravity Projects/new-indie-live-twentyfour/data/master_catalog.sqlite',
+        // Local project fallbacks
+        path.resolve(__dirname, '../../data/master_catalog.sqlite'),
+        path.resolve(__dirname, '../../data/music_catalog.sqlite')
+    ];
+
+    for (const cand of candidates) {
+        if (fs.existsSync(cand)) return cand;
+    }
+
+    // Default to sibling path or local data dir
+    const defaultDataDir = path.resolve(__dirname, '../../data');
+    if (!fs.existsSync(defaultDataDir)) {
+        fs.mkdirSync(defaultDataDir, { recursive: true });
+    }
+    return path.join(defaultDataDir, 'master_catalog.sqlite');
+}
+
+const DB_PATH = resolveMasterDbPath();
+let _dbInstance = null;
+
+/**
+ * Returns a singleton instance of the Unified Master SQLite database.
  */
 function getDatabase() {
     if (_dbInstance) return _dbInstance;
 
-    if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
+    const dbDir = path.dirname(DB_PATH);
+    if (!fs.existsSync(dbDir)) {
+        fs.mkdirSync(dbDir, { recursive: true });
     }
 
     _dbInstance = new DatabaseSync(DB_PATH);
 
-    // Initialize Schema
+    // Initialize Schema (compatible with new-indie-live-twentyfour & Command Center)
     _dbInstance.exec(`
         PRAGMA journal_mode = WAL;
         PRAGMA synchronous = NORMAL;
@@ -32,10 +62,10 @@ function getDatabase() {
             title TEXT NOT NULL,
             slug TEXT UNIQUE NOT NULL,
             first_seen_at TEXT NOT NULL,
-            first_source TEXT NOT NULL,
+            first_channel TEXT NOT NULL,
+            first_url TEXT,
             release_date TEXT,
             release_type TEXT,
-            views TEXT,
             description TEXT,
             heat_score INTEGER DEFAULT 1,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -44,10 +74,10 @@ function getDatabase() {
         CREATE TABLE IF NOT EXISTS sightings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             song_id INTEGER NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
-            source_name TEXT NOT NULL,
+            channel_name TEXT NOT NULL,
             source_url TEXT,
             seen_at TEXT NOT NULL,
-            UNIQUE(song_id, source_name)
+            UNIQUE(song_id, channel_name)
         );
 
         CREATE INDEX IF NOT EXISTS idx_songs_slug ON songs(slug);
@@ -81,22 +111,23 @@ function processSongEntry(item, sourceName = "Unknown") {
     const url = item.url || "";
     const views = item.views || "Manual review";
     const desc = item.description || "";
+    const releaseType = item.releaseType || "single";
 
-    // 1. Check if song exists
+    // 1. Check if song exists in unified catalog
     const findStmt = db.prepare(`SELECT * FROM songs WHERE slug = ?`);
     const existing = findStmt.get(slug);
 
     if (!existing) {
         // Brand-new global discovery
         const insertSong = db.prepare(`
-            INSERT INTO songs (artist, title, slug, first_seen_at, first_source, release_date, views, description, heat_score)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+            INSERT INTO songs (artist, title, slug, first_seen_at, first_channel, first_url, release_date, release_type, description, heat_score)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
         `);
-        const result = insertSong.run(artist, title, slug, seenAt, source, seenAt, views, desc);
+        const result = insertSong.run(artist, title, slug, seenAt, source, url, seenAt, releaseType, desc);
         const songId = Number(result.lastInsertRowid);
 
         const insertSighting = db.prepare(`
-            INSERT INTO sightings (song_id, source_name, source_url, seen_at)
+            INSERT INTO sightings (song_id, channel_name, source_url, seen_at)
             VALUES (?, ?, ?, ?)
         `);
         insertSighting.run(songId, source, url, seenAt);
@@ -112,13 +143,13 @@ function processSongEntry(item, sourceName = "Unknown") {
 
     // 2. Song already exists in database - check if this source is a new sighting
     const songId = existing.id;
-    const findSighting = db.prepare(`SELECT id FROM sightings WHERE song_id = ? AND source_name = ?`);
+    const findSighting = db.prepare(`SELECT id FROM sightings WHERE song_id = ? AND channel_name = ?`);
     const existingSighting = findSighting.get(songId, source);
 
     if (!existingSighting) {
         // New sighting from a distinct tastemaker -> Consensus Heat increases!
         const insertSighting = db.prepare(`
-            INSERT INTO sightings (song_id, source_name, source_url, seen_at)
+            INSERT INTO sightings (song_id, channel_name, source_url, seen_at)
             VALUES (?, ?, ?, ?)
         `);
         insertSighting.run(songId, source, url, seenAt);
@@ -130,8 +161,8 @@ function processSongEntry(item, sourceName = "Unknown") {
         const updateHeat = db.prepare(`UPDATE songs SET heat_score = ? WHERE id = ?`);
         updateHeat.run(heatCount, songId);
 
-        const allSourcesStmt = db.prepare(`SELECT source_name FROM sightings WHERE song_id = ?`);
-        const sources = allSourcesStmt.all(songId).map(s => s.source_name);
+        const allSourcesStmt = db.prepare(`SELECT channel_name FROM sightings WHERE song_id = ?`);
+        const sources = allSourcesStmt.all(songId).map(s => s.channel_name);
 
         return {
             isNewGlobal: false,
@@ -178,7 +209,7 @@ function getCatalogStats() {
 function getTopConsensusTracks(limit = 20) {
     const db = getDatabase();
     const rows = db.prepare(`
-        SELECT s.id, s.artist, s.title, s.slug, s.first_seen_at, s.first_source, s.heat_score
+        SELECT s.id, s.artist, s.title, s.slug, s.first_seen_at, s.first_channel, s.heat_score
         FROM songs s
         WHERE s.heat_score > 1
         ORDER BY s.heat_score DESC, s.first_seen_at DESC
@@ -186,7 +217,7 @@ function getTopConsensusTracks(limit = 20) {
     `).all(limit);
 
     return rows.map(r => {
-        const sources = db.prepare(`SELECT source_name, source_url, seen_at FROM sightings WHERE song_id = ?`).all(r.id);
+        const sources = db.prepare(`SELECT channel_name, source_url, seen_at FROM sightings WHERE song_id = ?`).all(r.id);
         return {
             ...r,
             sightings: sources
@@ -194,56 +225,11 @@ function getTopConsensusTracks(limit = 20) {
     });
 }
 
-/**
- * Backfills the SQLite database from all historical saved_searches JSON files.
- */
-function backfillFromHistory(savedSearchesDir) {
-    const db = getDatabase();
-    if (!fs.existsSync(savedSearchesDir)) return { processed: 0, imported: 0 };
-
-    const subdirs = fs.readdirSync(savedSearchesDir).filter(d => {
-        const p = path.join(savedSearchesDir, d);
-        return fs.statSync(p).isDirectory() && d !== 'cache';
-    });
-
-    let totalProcessed = 0;
-    let totalImported = 0;
-
-    for (const sub of subdirs) {
-        const subPath = path.join(savedSearchesDir, sub);
-        const files = fs.readdirSync(subPath).filter(f => f.endsWith('.json')).sort();
-
-        for (const file of files) {
-            try {
-                const content = fs.readFileSync(path.join(subPath, file), 'utf8');
-                const items = JSON.parse(content);
-                if (Array.isArray(items)) {
-                    for (const item of items) {
-                        if (!item || !item.title) continue;
-                        totalProcessed++;
-                        const res = processSongEntry(item, item.channel || sub);
-                        if (res.isNewGlobal) totalImported++;
-                    }
-                }
-            } catch (err) {
-                console.warn(`[Backfill] Error reading ${file}:`, err.message);
-            }
-        }
-    }
-
-    return {
-        processed: totalProcessed,
-        uniqueImported: totalImported,
-        stats: getCatalogStats()
-    };
-}
-
 module.exports = {
     getDatabase,
     processSongEntry,
     getCatalogStats,
     getTopConsensusTracks,
-    backfillFromHistory,
     slugify,
     normalizeKey,
     DB_PATH
