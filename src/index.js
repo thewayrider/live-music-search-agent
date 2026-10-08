@@ -1,17 +1,15 @@
 const fs = require('fs');
 const path = require('path');
-const { runAirChartAgent } = require('./agents/airChartAgent');
-// const { runAcidStagAgent } = require('./agents/acidStagAgent');
-const { runAmrapAgent } = require('./agents/amrapAgent');
-const { runBandcampAgent } = require('./agents/bandcampAgent');
-const { runFuturemagAgent } = require('./agents/futuremagAgent');
-const { runListenBrainzAgent } = require('./agents/listenBrainzAgent');
-const { runRootsMagAgent } = require('./agents/rootsMagAgent');
-const { runSpotifyOAuthAgent } = require('./agents/spotifyOAuthAgent');
-const { runTripleJApiAgent } = require('./agents/tripleJApiAgent');
-const { runTripleJUnearthedAgent } = require('./agents/tripleJUnearthedAgent');
-const { runMusicBrainzAgent } = require('./agents/musicBrainzAgent');
-const { runDeezerAgent } = require('./agents/deezerAgent');
+// Helper for resilient on-demand lazy loading of crawler agents
+function loadAgentSafely(agentName, relativePath) {
+    try {
+        return require(relativePath);
+    } catch (err) {
+        console.error(`\n[Crawler Loader] Warning: Could not load agent '${agentName}' from '${relativePath}': ${err.message}\n`);
+        return null;
+    }
+}
+
 const { generateHTML } = require('./utils/htmlGenerator');
 const { getPreviousReport, getNewAdditions } = require('./utils/diffEngine');
 const { sendEmailNotification } = require('./utils/emailNotifier');
@@ -44,43 +42,62 @@ async function main() {
 
     let results = [];
 
-    // Run agents
+    // Run agents with lazy-loading resilience
     if (config.airChart) {
-        const airChartResults = await runAirChartAgent(config.airChart, exclusions);
-        results = results.concat(airChartResults);
-    } /* else if (config.acidStag) {
-        const acidStagResults = await runAcidStagAgent(config.acidStag, exclusions);
-        results = results.concat(acidStagResults);
-    } */ else if (config.amrap) {
-        const amrapResults = await runAmrapAgent(config.amrap, exclusions);
-        results = results.concat(amrapResults);
+        const agent = loadAgentSafely('airChart', './agents/airChartAgent');
+        if (agent?.runAirChartAgent) {
+            results = results.concat(await agent.runAirChartAgent(config.airChart, exclusions));
+        }
+    } else if (config.amrap) {
+        const agent = loadAgentSafely('amrap', './agents/amrapAgent');
+        if (agent?.runAmrapAgent) {
+            results = results.concat(await agent.runAmrapAgent(config.amrap, exclusions));
+        }
     } else if (config.bandcamp) {
-        const bandcampResults = await runBandcampAgent(config.bandcamp, exclusions);
-        results = results.concat(bandcampResults);
+        const agent = loadAgentSafely('bandcamp', './agents/bandcampAgent');
+        if (agent?.runBandcampAgent) {
+            results = results.concat(await agent.runBandcampAgent(config.bandcamp, exclusions));
+        }
     } else if (config.futuremag) {
-        const futuremagResults = await runFuturemagAgent(config.futuremag, exclusions);
-        results = results.concat(futuremagResults);
+        const agent = loadAgentSafely('futuremag', './agents/futuremagAgent');
+        if (agent?.runFuturemagAgent) {
+            results = results.concat(await agent.runFuturemagAgent(config.futuremag, exclusions));
+        }
     } else if (config.listenbrainz) {
-        const listenbrainzResults = await runListenBrainzAgent(config.listenbrainz, exclusions);
-        results = results.concat(listenbrainzResults);
+        const agent = loadAgentSafely('listenbrainz', './agents/listenBrainzAgent');
+        if (agent?.runListenBrainzAgent) {
+            results = results.concat(await agent.runListenBrainzAgent(config.listenbrainz, exclusions));
+        }
     } else if (config.musicbrainz) {
-        const musicbrainzResults = await runMusicBrainzAgent(config.musicbrainz, exclusions);
-        results = results.concat(musicbrainzResults);
+        const agent = loadAgentSafely('musicbrainz', './agents/musicBrainzAgent');
+        if (agent?.runMusicBrainzAgent) {
+            results = results.concat(await agent.runMusicBrainzAgent(config.musicbrainz, exclusions));
+        }
     } else if (config.rootsmag) {
-        const rootsmagResults = await runRootsMagAgent(config.rootsmag, exclusions);
-        results = results.concat(rootsmagResults);
+        const agent = loadAgentSafely('rootsmag', './agents/rootsMagAgent');
+        if (agent?.runRootsMagAgent) {
+            results = results.concat(await agent.runRootsMagAgent(config.rootsmag, exclusions));
+        }
     } else if (configPath.includes('triplej_unearthed')) {
-        const triplejUnearthedResults = await runTripleJUnearthedAgent(config.triplej_unearthed || {}, config);
-        results = results.concat(triplejUnearthedResults);
+        const agent = loadAgentSafely('triplej_unearthed', './agents/tripleJUnearthedAgent');
+        if (agent?.runTripleJUnearthedAgent) {
+            results = results.concat(await agent.runTripleJUnearthedAgent(config.triplej_unearthed || {}, config));
+        }
     } else if (configPath.includes('triplej')) {
-        const triplejResults = await runTripleJApiAgent(config.triplej || {}, config);
-        results = results.concat(triplejResults);
+        const agent = loadAgentSafely('triplej', './agents/tripleJApiAgent');
+        if (agent?.runTripleJApiAgent) {
+            results = results.concat(await agent.runTripleJApiAgent(config.triplej || {}, config));
+        }
     } else if (config.deezer) {
-        const deezerResults = await runDeezerAgent(config.deezer, exclusions);
-        results = results.concat(deezerResults);
+        const agent = loadAgentSafely('deezer', './agents/deezerAgent');
+        if (agent?.runDeezerAgent) {
+            results = results.concat(await agent.runDeezerAgent(config.deezer, exclusions));
+        }
     } else if (config.spotify_oauth) {
-        const spotifyResults = await runSpotifyOAuthAgent(config.spotify_oauth, exclusions);
-        results = results.concat(spotifyResults);
+        const agent = loadAgentSafely('spotify_oauth', './agents/spotifyOAuthAgent');
+        if (agent?.runSpotifyOAuthAgent) {
+            results = results.concat(await agent.runSpotifyOAuthAgent(config.spotify_oauth, exclusions));
+        }
     } else {
         // Dynamic Agent Dispatch for Overseer-scaffolded crawlers
         for (const [key, val] of Object.entries(config)) {
