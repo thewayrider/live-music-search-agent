@@ -1,12 +1,21 @@
 const fs = require('fs');
 const path = require('path');
 const { aggregateCrawlerMetrics } = require('./metricsAggregator');
-const { getGistConfig } = require('./gistSync');
+const { getGistConfig, fetchCurrentGistData, mergeMetrics } = require('./gistSync');
 
-function generateDashboard() {
+async function generateDashboard() {
     // 1. Ensure latest metrics are computed
-    const analytics = aggregateCrawlerMetrics();
+    let analytics = aggregateCrawlerMetrics();
     const gistConfig = getGistConfig();
+    
+    // Fetch and merge Gist data if available
+    if (gistConfig.gistId && gistConfig.token) {
+        const gistData = await fetchCurrentGistData(gistConfig.gistId, gistConfig.token);
+        if (gistData) {
+            analytics = mergeMetrics(analytics, gistData);
+        }
+    }
+
     const gistStatusLabel = (gistConfig.gistId && gistConfig.token) 
         ? `<span class="badge badge-success">Gist Cloud Sync Active</span> (ID: ${gistConfig.gistId.slice(0, 8)}...)`
         : `<span class="badge badge-neutral">Local Only</span> (Gist sync not yet configured in configs/secrets.json)`;
@@ -393,7 +402,7 @@ function generateDashboard() {
 }
 
 if (require.main === module) {
-    generateDashboard();
+    generateDashboard().catch(console.error);
 }
 
 module.exports = {

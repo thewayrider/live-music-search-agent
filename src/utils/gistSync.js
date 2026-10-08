@@ -164,6 +164,8 @@ async function syncMetricsToGist(metricsData) {
 
 module.exports = {
     syncMetricsToGist,
-    getGistConfig
+    getGistConfig,
+    fetchCurrentGistData,
+    mergeMetrics
 };
 
