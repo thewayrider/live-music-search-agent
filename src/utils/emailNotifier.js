@@ -3,6 +3,10 @@ const fs = require('fs');
 const path = require('path');
 
 async function sendEmailNotification(newSongs, baseHtmlPath, searchName) {
+    if (process.env.DRY_RUN === 'true') {
+        console.log(`[DRY RUN] Skipping email notification for ${searchName}`);
+        return;
+    }
     // Load secrets
     const secretsPath = path.resolve(__dirname, '../../configs/secrets.json');
     if (!fs.existsSync(secretsPath)) {
@@ -107,6 +111,10 @@ async function sendEmailNotification(newSongs, baseHtmlPath, searchName) {
 }
 
 async function sendReminderEmail(subject, htmlContent) {
+    if (process.env.DRY_RUN === 'true') {
+        console.log(`[DRY RUN] Skipping reminder email: ${subject}`);
+        return;
+    }
     const secretsPath = path.resolve(__dirname, '../../configs/secrets.json');
     if (!fs.existsSync(secretsPath)) {
         console.error(`ERROR: Secrets file not found at ${secretsPath}. Cannot send email.`);

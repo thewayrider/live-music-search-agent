@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { runAirChartAgent } = require('./agents/airChartAgent');
-const { runAcidStagAgent } = require('./agents/acidStagAgent');
+// const { runAcidStagAgent } = require('./agents/acidStagAgent');
 const { runAmrapAgent } = require('./agents/amrapAgent');
 const { runBandcampAgent } = require('./agents/bandcampAgent');
 const { runFuturemagAgent } = require('./agents/futuremagAgent');
@@ -48,10 +48,10 @@ async function main() {
     if (config.airChart) {
         const airChartResults = await runAirChartAgent(config.airChart, exclusions);
         results = results.concat(airChartResults);
-    } else if (config.acidStag) {
+    } /* else if (config.acidStag) {
         const acidStagResults = await runAcidStagAgent(config.acidStag, exclusions);
         results = results.concat(acidStagResults);
-    } else if (config.amrap) {
+    } */ else if (config.amrap) {
         const amrapResults = await runAmrapAgent(config.amrap, exclusions);
         results = results.concat(amrapResults);
     } else if (config.bandcamp) {
